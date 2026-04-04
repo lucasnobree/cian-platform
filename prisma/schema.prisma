@@ -1,0 +1,230 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ═══════════════════════════════════════════
+// AUTH & SYSTEM
+// ═══════════════════════════════════════════
+
+model User {
+  id             String    @id @default(cuid())
+  name           String
+  email          String    @unique
+  hashedPassword String
+  role           String    @default("admin")
+  avatarUrl      String?
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  auditLogs      AuditLog[]
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  action      String
+  entity      String
+  entityId    String?
+  details     Json?
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ═══════════════════════════════════════════
+// CRM / CLIENTS
+// ═══════════════════════════════════════════
+
+model Client {
+  id              String    @id @default(cuid())
+  brideFullName   String
+  brideCpf        String?
+  bridePhone      String
+  brideEmail      String
+  brideInstagram  String?
+  groomFullName   String
+  groomCpf        String?
+  groomPhone      String?
+  groomEmail      String?
+  groomInstagram  String?
+  coupleHashtag   String?
+  weddingDate     DateTime
+  ceremonyVenue   String?
+  receptionVenue  String?
+  city            String?
+  state           String?
+  estimatedGuests Int?
+  ceremonyType    String?
+  pipelineStage   String    @default("lead")
+  servicePackage  String?
+  contractValue   Decimal?  @db.Decimal(10, 2)
+  leadSource      String?
+  referredBy      String?
+  tags            String[]
+  websiteSlug     String?   @unique
+  websiteStatus   String    @default("draft")
+  trelloBoardId   String?
+  trelloBoardUrl  String?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  documents       Document[]
+  interactions    Interaction[]
+  websiteConfig   WebsiteConfig?
+  giftItems       GiftItem[]
+  gifts           Gift[]
+
+  @@index([pipelineStage])
+  @@index([weddingDate])
+  @@index([websiteSlug])
+}
+
+model Document {
+  id          String   @id @default(cuid())
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  name        String
+  type        String
+  url         String
+  size        Int?
+  mimeType    String?
+  createdAt   DateTime @default(now())
+
+  @@index([clientId])
+}
+
+model Interaction {
+  id          String   @id @default(cuid())
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  type        String
+  title       String
+  description String?
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([clientId])
+  @@index([date])
+}
+
+// ═══════════════════════════════════════════
+// WEDDING WEBSITES
+// ═══════════════════════════════════════════
+
+model WebsiteConfig {
+  id              String   @id @default(cuid())
+  clientId        String   @unique
+  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  primaryColor    String   @default("#0D9488")
+  secondaryColor  String   @default("#E8E0D0")
+  accentColor     String   @default("#C8A855")
+  backgroundColor String   @default("#EDE6DA")
+  textColor       String   @default("#2E2E2A")
+  fontHeading     String   @default("Pinyon Script")
+  fontBody        String   @default("Cormorant SC")
+  monogram        String?
+  heroTitle       String?
+  heroDate        String?
+  heroLocation    String?
+  heroImageUrl    String?
+  welcomeTitle    String?
+  welcomeText     String?
+  eventTitle      String?
+  eventText       String?
+  eventVenue      String?
+  eventTime       String?
+  dressCodeWomen  String?
+  dressCodeMen    String?
+  showCountdown   Boolean @default(true)
+  showWelcome     Boolean @default(true)
+  showEvent       Boolean @default(true)
+  showSchedule    Boolean @default(true)
+  showDressCode   Boolean @default(true)
+  showGifts       Boolean @default(true)
+  showRsvp        Boolean @default(true)
+  showTips        Boolean @default(false)
+  showGallery     Boolean @default(false)
+  schedule        Json?
+  tips            Json?
+  galleryImages   String[]
+  couplePhotoUrl  String?
+  metaTitle       String?
+  metaDescription String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Rsvp {
+  id              String   @id @default(cuid())
+  websiteSlug     String
+  guestName       String
+  guestEmail      String?
+  guestPhone      String?
+  attendance      String
+  companions      Int      @default(0)
+  dietaryNotes    String?
+  message         String?
+  createdAt       DateTime @default(now())
+
+  @@index([websiteSlug])
+}
+
+// ═══════════════════════════════════════════
+// GIFT LIST & PAYMENTS
+// ═══════════════════════════════════════════
+
+model GiftItem {
+  id            String   @id @default(cuid())
+  clientId      String
+  client        Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  title         String
+  description   String?
+  targetAmount  Decimal  @db.Decimal(10, 2)
+  imageUrl      String?
+  category      String?
+  isActive      Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  gifts         Gift[]
+
+  @@index([clientId])
+}
+
+model Gift {
+  id               String    @id @default(cuid())
+  clientId         String
+  client           Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  giftItemId       String?
+  giftItem         GiftItem? @relation(fields: [giftItemId], references: [id])
+  guestName        String
+  guestEmail       String?
+  guestPhone       String?
+  guestMessage     String?
+  amount           Decimal   @db.Decimal(10, 2)
+  paymentMethod    String    @default("pix")
+  paymentStatus    String    @default("pending")
+  paymentId        String?
+  pixCode          String?
+  pixQrCodeUrl     String?
+  paidAt           DateTime?
+  expiresAt        DateTime?
+  agencyFeePercent Decimal   @default(3.5) @db.Decimal(4, 2)
+  agencyFeeAmount  Decimal?  @db.Decimal(10, 2)
+  netAmount        Decimal?  @db.Decimal(10, 2)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([clientId])
+  @@index([paymentStatus])
+  @@index([paymentId])
+}
