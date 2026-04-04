@@ -12,10 +12,11 @@ datasource db {
 
 model User {
   id             String    @id @default(cuid())
+  username       String    @unique
   name           String
-  email          String    @unique
+  email          String?
   hashedPassword String
-  role           String    @default("admin")
+  role           String    @default("staff") // owner | staff
   avatarUrl      String?
   isActive       Boolean   @default(true)
   createdAt      DateTime  @default(now())

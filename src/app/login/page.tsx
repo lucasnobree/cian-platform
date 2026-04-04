@@ -1,19 +1,34 @@
 "use client";
 import { useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    // TODO: integrate with NextAuth signIn()
-    console.log("Login:", { email, password });
-    setTimeout(() => setLoading(false), 1000);
+    setError("");
+
+    const result = await signIn("credentials", {
+      username,
+      password,
+      redirect: false,
+    });
+
+    if (result?.error) {
+      setError("Usuário ou senha inválidos");
+      setLoading(false);
+    } else {
+      router.push("/admin");
+    }
   }
 
   return (
@@ -39,12 +54,12 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-white/60 mb-1.5">E-mail</label>
+              <label className="block text-xs font-medium text-white/60 mb-1.5">Usuário</label>
               <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="seu@email.com"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="seu.usuario"
                 required
                 className="bg-white/10 border-white/20 text-white placeholder:text-white/30 focus:border-cian-400 focus:ring-cian-400/20"
               />
@@ -60,6 +75,11 @@ export default function LoginPage() {
                 className="bg-white/10 border-white/20 text-white placeholder:text-white/30 focus:border-cian-400 focus:ring-cian-400/20"
               />
             </div>
+
+            {error && (
+              <p className="text-coral text-xs text-center">{error}</p>
+            )}
+
             <Button type="submit" className="w-full h-11 mt-2" disabled={loading}>
               {loading ? "Entrando..." : "Entrar"}
             </Button>

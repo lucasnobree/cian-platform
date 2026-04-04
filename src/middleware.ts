@@ -16,7 +16,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Protect /api/clients and other admin APIs (but not /api/auth, /api/public, /api/webhooks)
+  // Protect /api/clients, /api/dashboard, /api/users, /api/profile (but not /api/auth, /api/public, /api/webhooks)
   if (
     pathname.startsWith("/api/") &&
     !pathname.startsWith("/api/auth") &&
@@ -31,5 +31,12 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/login", "/api/clients/:path*", "/api/dashboard/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/login",
+    "/api/clients/:path*",
+    "/api/dashboard/:path*",
+    "/api/users/:path*",
+    "/api/profile/:path*",
+  ],
 };

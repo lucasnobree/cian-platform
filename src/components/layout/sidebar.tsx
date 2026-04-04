@@ -1,9 +1,10 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Globe, Gift, Settings, X, Menu } from "lucide-react";
+import { LayoutDashboard, Users, Globe, Gift, Settings, X, Menu, UserCog, UserCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { useSession, signOut } from "next-auth/react";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -16,6 +17,13 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const { data: session } = useSession();
+  const role = (session?.user as unknown as { role?: string })?.role;
+
+  const allNavItems = [
+    ...navItems,
+    ...(role === "owner" ? [{ href: "/admin/users", label: "Usuários", icon: UserCog }] : []),
+  ];
 
   const nav = (
     <div className="flex flex-col h-full">
@@ -36,7 +44,7 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 space-y-1">
-        {navItems.map((item) => {
+        {allNavItems.map((item) => {
           const isActive = item.href === "/admin"
             ? pathname === "/admin"
             : pathname.startsWith(item.href);
@@ -59,9 +67,23 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-cian-800/30">
-        <p className="text-[10px] text-cian-700/40 text-center tracking-wider">CIAN Art Studio</p>
+      {/* User section */}
+      <div className="p-3 border-t border-cian-800/30">
+        <Link
+          href="/admin/profile"
+          onClick={() => setOpen(false)}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-cian-100/50 hover:bg-cian-600/10 hover:text-cian-300 transition-all duration-200"
+        >
+          <UserCircle size={18} strokeWidth={1.5} />
+          <span className="truncate">{session?.user?.name ?? "Perfil"}</span>
+        </Link>
+        <button
+          onClick={() => signOut({ callbackUrl: "/login" })}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-coral/70 hover:bg-coral/10 hover:text-coral transition-all duration-200 mt-1"
+        >
+          <X size={18} strokeWidth={1.5} />
+          Sair
+        </button>
       </div>
     </div>
   );
