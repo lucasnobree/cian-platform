@@ -69,11 +69,11 @@ export async function GET() {
       },
       monthRevenue: monthGifts._sum.amount || 0,
       recentClients,
-      upcomingDeadlines: upcomingDeadlines.map((c) => ({
+      upcomingDeadlines: upcomingDeadlines.map((c: { id: string; brideFullName: string; groomFullName: string; weddingDate: Date }) => ({
         ...c,
         daysUntil: Math.ceil((c.weddingDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
       })),
-      pipelineCounts: Object.fromEntries(pipelineCounts.map((p) => [p.pipelineStage, p._count])),
+      pipelineCounts: Object.fromEntries(pipelineCounts.map((p: { pipelineStage: string; _count: number }) => [p.pipelineStage, p._count])),
     });
   } catch (error) {
     console.error("[GET /api/dashboard/stats]", error);
