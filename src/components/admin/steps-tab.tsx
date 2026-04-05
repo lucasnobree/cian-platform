@@ -655,7 +655,7 @@ export function StepsTab({ clientId }: { clientId: string }) {
                       <Select
                         value={step.status}
                         onChange={(e) => handleStatusChange(step.id, e.target.value)}
-                        className="h-7 w-auto min-w-0 text-xs px-2 pr-6"
+                        className="h-8 w-auto min-w-[120px] text-xs px-2 pr-7"
                       >
                         {STATUS_OPTIONS.map((opt) => (
                           <option key={opt.value} value={opt.value}>
