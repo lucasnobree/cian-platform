@@ -34,13 +34,13 @@ export function Topbar() {
     : "CA";
 
   return (
-    <header className="h-16 border-b border-sand-200 bg-white flex items-center justify-between px-6">
+    <header className="h-16 bg-white/90 backdrop-blur-sm flex items-center justify-between px-6 topbar-shadow">
       <h2 className="text-lg font-semibold text-sand-800" style={{ fontFamily: "var(--font-display)" }}>
         {title}
       </h2>
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-cian-600 flex items-center justify-center text-white text-xs font-semibold">
+          <div className="w-8 h-8 rounded-full bg-linear-to-br from-cian-500 to-cian-700 flex items-center justify-center text-white text-xs font-semibold avatar-glow">
             {initials}
           </div>
           <span className="text-sm text-sand-600 hidden sm:block">

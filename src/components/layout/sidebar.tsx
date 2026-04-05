@@ -25,8 +25,14 @@ export function Sidebar() {
     ...(role === "owner" ? [{ href: "/admin/users", label: "Usuários", icon: UserCog }] : []),
   ];
 
+  const sidebarWave = (
+    <svg className="sidebar-wave" viewBox="0 0 256 80" preserveAspectRatio="none">
+      <path d="M0,40 C64,70 128,10 192,40 C224,55 240,50 256,40 L256,80 L0,80 Z" fill="currentColor" className="text-cian-400" />
+    </svg>
+  );
+
   const nav = (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
       {/* Logo */}
       <div className="p-6 pb-8">
         <div className="flex items-center justify-between">
@@ -54,9 +60,9 @@ export function Sidebar() {
               href={item.href}
               onClick={() => setOpen(false)}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200",
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 relative",
                 isActive
-                  ? "bg-cian-600/20 text-cian-400 font-medium"
+                  ? "bg-cian-600/20 text-cian-400 font-medium before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-0.5 before:h-5 before:bg-cian-400 before:rounded-r-full"
                   : "text-cian-100/50 hover:bg-cian-600/10 hover:text-cian-300"
               )}
             >
@@ -85,6 +91,7 @@ export function Sidebar() {
           Sair
         </button>
       </div>
+      {sidebarWave}
     </div>
   );
 
@@ -106,7 +113,7 @@ export function Sidebar() {
       {/* Sidebar mobile */}
       <aside
         className={cn(
-          "fixed top-0 left-0 h-full w-64 bg-cian-950 z-50 transform transition-transform duration-300 lg:hidden",
+          "fixed top-0 left-0 h-full w-64 bg-linear-to-b from-cian-950 to-cian-900 z-50 transform transition-transform duration-300 lg:hidden",
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -114,7 +121,7 @@ export function Sidebar() {
       </aside>
 
       {/* Sidebar desktop */}
-      <aside className="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:w-64 bg-cian-950">
+      <aside className="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:w-64 bg-linear-to-b from-cian-950 to-cian-900">
         {nav}
       </aside>
     </>

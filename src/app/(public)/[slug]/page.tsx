@@ -14,6 +14,10 @@ import {
   Shirt,
   Lightbulb,
   ChevronDown,
+  Flower,
+  Crown,
+  ZoomIn,
+  Sparkles,
 } from "lucide-react";
 
 // ────────────────── Types ──────────────────
@@ -92,7 +96,12 @@ function WeddingSection({
   ariaLabel?: string;
 }) {
   return (
-    <section id={id} role="region" aria-label={ariaLabel || id} className={`px-6 py-16 sm:py-20 md:py-24 ${className}`}>
+    <section
+      id={id}
+      role="region"
+      aria-label={ariaLabel || id}
+      className={`px-6 py-16 sm:py-20 md:py-24 wedding-section-enter ${className}`}
+    >
       <div className="max-w-3xl mx-auto">{children}</div>
     </section>
   );
@@ -100,19 +109,25 @@ function WeddingSection({
 
 function Divider() {
   return (
-    <div className="flex items-center justify-center gap-3 py-2">
+    <div className="flex items-center justify-center gap-4 py-3">
       <div
-        className="h-px w-12 sm:w-20"
-        style={{ backgroundColor: "var(--wedding-accent)", opacity: 0.4 }}
+        className="h-px w-16 sm:w-24"
+        style={{
+          background: `linear-gradient(to right, transparent, var(--wedding-accent))`,
+          opacity: 0.4,
+        }}
       />
       <Heart
-        size={14}
-        style={{ color: "var(--wedding-accent)", opacity: 0.5 }}
+        size={12}
+        style={{ color: "var(--wedding-accent)", opacity: 0.45 }}
         fill="currentColor"
       />
       <div
-        className="h-px w-12 sm:w-20"
-        style={{ backgroundColor: "var(--wedding-accent)", opacity: 0.4 }}
+        className="h-px w-16 sm:w-24"
+        style={{
+          background: `linear-gradient(to left, transparent, var(--wedding-accent))`,
+          opacity: 0.4,
+        }}
       />
     </div>
   );
@@ -167,6 +182,35 @@ export default async function WeddingPage({ params }: PageProps) {
     <>
       {/* eslint-disable-next-line @next/next/no-page-custom-font */}
       <link href={fontsUrl} rel="stylesheet" />
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            @keyframes weddingFadeUp {
+              from { opacity: 0; transform: translateY(16px); }
+              to { opacity: 1; transform: translateY(0); }
+            }
+            .wedding-section-enter {
+              animation: weddingFadeUp 0.8s ease-out both;
+            }
+            @supports (animation-timeline: view()) {
+              .wedding-section-enter {
+                animation-timeline: view();
+                animation-range: entry 0% entry 30%;
+              }
+            }
+            @keyframes weddingScrollLine {
+              0%, 100% { opacity: 0.3; }
+              50% { opacity: 0.7; }
+            }
+            .wedding-scroll-hint > div:first-child {
+              animation: weddingScrollLine 2.5s ease-in-out infinite;
+            }
+            .wedding-success-check {
+              animation: weddingFadeUp 0.5s ease-out both;
+            }
+          `,
+        }}
+      />
       <div
         style={
           {
@@ -186,15 +230,23 @@ export default async function WeddingPage({ params }: PageProps) {
       >
         {/* ═══════ HERO ═══════ */}
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-          {/* Background */}
+          {/* Background with parallax hint */}
           {cfg.heroImageUrl ? (
             <div
-              className="absolute inset-0 bg-cover bg-center"
+              className="absolute inset-0 bg-cover bg-center bg-fixed"
               style={{
                 backgroundImage: `url(${cfg.heroImageUrl})`,
               }}
             >
               <div className="absolute inset-0 bg-black/40" />
+              {/* Vignette overlay */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  background:
+                    "radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.35) 100%)",
+                }}
+              />
             </div>
           ) : (
             <div
@@ -208,15 +260,27 @@ export default async function WeddingPage({ params }: PageProps) {
           {/* Content */}
           <div className="relative z-10 text-center px-6 py-20">
             {cfg.monogram && (
-              <p
-                className="text-sm sm:text-base tracking-[0.3em] uppercase mb-6 opacity-80"
-                style={{
-                  fontFamily: `'${safeBody}', serif`,
-                  color: cfg.heroImageUrl ? "#fff" : safeText,
-                }}
-              >
-                {cfg.monogram}
-              </p>
+              <div className="flex items-center justify-center mb-8">
+                <div
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center"
+                  style={{
+                    border: `1px solid ${cfg.heroImageUrl ? "rgba(255,255,255,0.5)" : safeAccent + "60"}`,
+                    boxShadow: cfg.heroImageUrl
+                      ? "0 0 30px rgba(255,255,255,0.08)"
+                      : `0 0 30px ${safeAccent}10`,
+                  }}
+                >
+                  <p
+                    className="text-sm sm:text-base tracking-[0.3em] uppercase opacity-90"
+                    style={{
+                      fontFamily: `'${safeBody}', serif`,
+                      color: cfg.heroImageUrl ? "#fff" : safeText,
+                    }}
+                  >
+                    {cfg.monogram}
+                  </p>
+                </div>
+              </div>
             )}
 
             <h1
@@ -225,6 +289,9 @@ export default async function WeddingPage({ params }: PageProps) {
                 fontFamily: `'${safeHeading}', cursive`,
                 color: cfg.heroImageUrl ? "#fff" : safePrimary,
                 lineHeight: 1.1,
+                textShadow: cfg.heroImageUrl
+                  ? "0 2px 20px rgba(0,0,0,0.3), 0 1px 4px rgba(0,0,0,0.2)"
+                  : `0 1px 8px ${safePrimary}15`,
               }}
             >
               {cfg.heroTitle || `${brideName} & ${groomName}`}
@@ -236,6 +303,7 @@ export default async function WeddingPage({ params }: PageProps) {
                 style={{
                   fontFamily: `'${safeBody}', serif`,
                   color: cfg.heroImageUrl ? "#fff" : safeText,
+                  textShadow: cfg.heroImageUrl ? "0 1px 6px rgba(0,0,0,0.3)" : "none",
                 }}
               >
                 {cfg.heroDate ||
@@ -253,6 +321,7 @@ export default async function WeddingPage({ params }: PageProps) {
                 style={{
                   fontFamily: `'${safeBody}', serif`,
                   color: cfg.heroImageUrl ? "#fff" : safeText,
+                  textShadow: cfg.heroImageUrl ? "0 1px 4px rgba(0,0,0,0.3)" : "none",
                 }}
               >
                 <MapPin size={14} />
@@ -260,10 +329,17 @@ export default async function WeddingPage({ params }: PageProps) {
               </p>
             )}
 
-            {/* Scroll hint */}
-            <div className="mt-16 animate-bounce opacity-50">
+            {/* Scroll hint — elegant animated line + chevron */}
+            <div className="mt-16 flex flex-col items-center gap-2 opacity-50 wedding-scroll-hint">
+              <div
+                className="w-px h-8"
+                style={{
+                  background: `linear-gradient(to bottom, transparent, ${cfg.heroImageUrl ? "#fff" : safeText})`,
+                }}
+              />
               <ChevronDown
-                size={24}
+                size={18}
+                className="animate-bounce"
                 style={{ color: cfg.heroImageUrl ? "#fff" : safeText }}
               />
             </div>
@@ -364,20 +440,26 @@ export default async function WeddingPage({ params }: PageProps) {
             </div>
 
             <div className="relative max-w-md mx-auto">
-              {/* Timeline line */}
+              {/* Timeline line — subtle gradient */}
               <div
                 className="absolute left-4 top-0 bottom-0 w-px"
-                style={{ backgroundColor: "var(--wedding-accent)", opacity: 0.3 }}
+                style={{
+                  background: `linear-gradient(to bottom, transparent, var(--wedding-accent), transparent)`,
+                  opacity: 0.3,
+                }}
               />
 
               <div className="space-y-8">
                 {schedule.map((item, i) => (
                   <div key={i} className="flex gap-5 pl-4">
-                    {/* Timeline dot */}
+                    {/* Timeline dot — decorative ring */}
                     <div className="relative flex-shrink-0">
                       <div
                         className="w-3 h-3 rounded-full -ml-1.5 mt-1.5"
-                        style={{ backgroundColor: "var(--wedding-accent)" }}
+                        style={{
+                          backgroundColor: "var(--wedding-accent)",
+                          boxShadow: "0 0 0 3px var(--wedding-bg), 0 0 0 4px var(--wedding-accent)",
+                        }}
                       />
                     </div>
                     <div>
@@ -420,13 +502,14 @@ export default async function WeddingPage({ params }: PageProps) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
               {cfg.dressCodeWomen && (
                 <div
-                  className="rounded-xl p-6 text-center"
+                  className="rounded-xl p-6 text-center overflow-hidden relative"
                   style={{
                     backgroundColor: `${safeSecondary}80`,
                     border: `1px solid ${safeAccent}40`,
+                    borderTop: `3px solid var(--wedding-accent)`,
                   }}
                 >
-                  <Shirt
+                  <Flower
                     size={24}
                     className="mx-auto mb-3"
                     style={{ color: "var(--wedding-accent)" }}
@@ -450,13 +533,14 @@ export default async function WeddingPage({ params }: PageProps) {
               )}
               {cfg.dressCodeMen && (
                 <div
-                  className="rounded-xl p-6 text-center"
+                  className="rounded-xl p-6 text-center overflow-hidden relative"
                   style={{
                     backgroundColor: `${safeSecondary}80`,
                     border: `1px solid ${safeAccent}40`,
+                    borderTop: `3px solid var(--wedding-accent)`,
                   }}
                 >
-                  <Shirt
+                  <Crown
                     size={24}
                     className="mx-auto mb-3"
                     style={{ color: "var(--wedding-accent)" }}
@@ -584,14 +668,26 @@ export default async function WeddingPage({ params }: PageProps) {
               {galleryImages.map((url, i) => (
                 <div
                   key={i}
-                  className="aspect-square rounded-lg overflow-hidden"
+                  className={`rounded-lg overflow-hidden group relative ${
+                    i % 5 === 0
+                      ? "aspect-3/4"
+                      : i % 5 === 3
+                        ? "aspect-4/3"
+                        : "aspect-square"
+                  }`}
                   style={{ border: `1px solid ${safeAccent}20` }}
                 >
                   <img
                     src={url}
                     alt={`Galeria ${i + 1}`}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                   />
+                  <div
+                    className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    style={{ backgroundColor: "rgba(0,0,0,0.15)" }}
+                  >
+                    <ZoomIn size={20} className="text-white/80" />
+                  </div>
                 </div>
               ))}
             </div>
@@ -599,15 +695,39 @@ export default async function WeddingPage({ params }: PageProps) {
         )}
 
         {/* ═══════ FOOTER ═══════ */}
-        <footer className="text-center py-12 px-6 opacity-50">
+        <footer className="text-center pt-4 pb-12 px-6">
+          {/* Decorative line above footer */}
+          <div className="flex items-center justify-center gap-3 mb-8">
+            <div
+              className="h-px w-20 sm:w-32"
+              style={{
+                background: `linear-gradient(to right, transparent, var(--wedding-accent))`,
+                opacity: 0.25,
+              }}
+            />
+            <Sparkles
+              size={10}
+              style={{ color: "var(--wedding-accent)", opacity: 0.35 }}
+            />
+            <div
+              className="h-px w-20 sm:w-32"
+              style={{
+                background: `linear-gradient(to left, transparent, var(--wedding-accent))`,
+                opacity: 0.25,
+              }}
+            />
+          </div>
           <p
-            className="text-xs tracking-[0.2em] uppercase"
-            style={{ fontFamily: "var(--wedding-font-body)" }}
+            className="text-lg sm:text-xl opacity-50"
+            style={{
+              fontFamily: "var(--wedding-font-heading)",
+              color: "var(--wedding-primary)",
+            }}
           >
             {cfg.heroTitle || `${brideName} & ${groomName}`}
           </p>
           <p
-            className="text-[10px] mt-2 opacity-60"
+            className="text-[10px] mt-3 opacity-30 tracking-[0.15em] uppercase"
             style={{ fontFamily: "var(--wedding-font-body)" }}
           >
             Feito com amor por CIAN Art Studio

@@ -85,3 +85,86 @@ h1, h2, h3, h4, h5, h6 {
 .delay-600 { animation-delay: 0.6s; }
 .delay-700 { animation-delay: 0.7s; }
 .delay-800 { animation-delay: 0.8s; }
+
+/* Pipeline bar shine effect */
+@keyframes pipeline-shine {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.pipeline-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.pipeline-shine::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: pipeline-shine 3s ease-in-out infinite;
+}
+
+/* Sidebar wave decoration */
+.sidebar-wave {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  opacity: 0.06;
+  pointer-events: none;
+}
+
+/* Stat card glassmorphism */
+.stat-card-glass {
+  background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.8) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Topbar gradient shadow */
+.topbar-shadow {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.02);
+}
+
+/* List row hover accent */
+.row-hover-accent {
+  border-left: 2px solid transparent;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.row-hover-accent:hover {
+  border-left-color: var(--color-cian-400);
+  background-color: var(--color-sand-50);
+}
+
+/* Avatar glow ring */
+.avatar-glow {
+  box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2), 0 0 8px rgba(13, 148, 136, 0.1);
+}
+
+/* Kanban card hover lift */
+@keyframes card-hover-lift {
+  from { transform: translateY(0); }
+  to { transform: translateY(-2px); }
+}
+
+.kanban-card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kanban-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
+}
+
+/* Empty state wave background */
+.empty-state-wave {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%230D9488' fill-opacity='0.03' d='M0,224L48,213.3C96,203,192,181,288,186.7C384,192,480,224,576,218.7C672,213,768,171,864,165.3C960,160,1056,192,1152,186.7C1248,181,1344,139,1392,117.3L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: bottom;
+  background-size: cover;
+}

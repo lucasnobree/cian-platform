@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, Heart } from "lucide-react";
 
 interface RsvpFormProps {
   slug: string;
@@ -69,23 +69,31 @@ export function RsvpForm({ slug }: RsvpFormProps) {
 
   if (status === "success") {
     return (
-      <div className="text-center py-12">
-        <CheckCircle2
-          size={48}
-          className="mx-auto mb-4"
-          style={{ color: "var(--wedding-primary)" }}
-        />
+      <div className="text-center py-12 wedding-success-check">
+        <div
+          className="w-20 h-20 rounded-full mx-auto mb-5 flex items-center justify-center"
+          style={{
+            backgroundColor: "var(--wedding-secondary)",
+            border: "2px solid var(--wedding-primary)",
+            boxShadow: `0 0 0 6px color-mix(in srgb, var(--wedding-primary) 10%, transparent)`,
+          }}
+        >
+          <CheckCircle2
+            size={36}
+            style={{ color: "var(--wedding-primary)" }}
+          />
+        </div>
         <h3
-          className="text-2xl mb-2"
+          className="text-2xl sm:text-3xl mb-2"
           style={{
             fontFamily: "var(--wedding-font-heading)",
-            color: "var(--wedding-text)",
+            color: "var(--wedding-primary)",
           }}
         >
           Obrigado!
         </h3>
         <p
-          className="opacity-70"
+          className="opacity-70 text-sm sm:text-base"
           style={{
             fontFamily: "var(--wedding-font-body)",
             color: "var(--wedding-text)",
@@ -111,6 +119,29 @@ export function RsvpForm({ slug }: RsvpFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="max-w-lg mx-auto space-y-5">
+      {/* Decorative element */}
+      <div className="flex items-center justify-center gap-3 pb-2">
+        <div
+          className="h-px w-12 sm:w-16"
+          style={{
+            background: "linear-gradient(to right, transparent, var(--wedding-accent))",
+            opacity: 0.3,
+          }}
+        />
+        <Heart
+          size={10}
+          style={{ color: "var(--wedding-accent)", opacity: 0.4 }}
+          fill="currentColor"
+        />
+        <div
+          className="h-px w-12 sm:w-16"
+          style={{
+            background: "linear-gradient(to left, transparent, var(--wedding-accent))",
+            opacity: 0.3,
+          }}
+        />
+      </div>
+
       {/* Honeypot */}
       <input
         name="website"
@@ -184,7 +215,7 @@ export function RsvpForm({ slug }: RsvpFormProps) {
           ].map((opt) => (
             <label
               key={opt.value}
-              className="flex items-center gap-2 cursor-pointer rounded-lg border px-4 py-2.5 text-sm transition-colors flex-1 text-center justify-center"
+              className="flex items-center gap-2 cursor-pointer rounded-lg border-2 px-4 py-3 text-sm transition-all duration-200 flex-1 text-center justify-center"
               style={{
                 ...labelStyle,
                 borderColor:
@@ -199,6 +230,14 @@ export function RsvpForm({ slug }: RsvpFormProps) {
                   formData.attendance === opt.value
                     ? "#fff"
                     : "var(--wedding-text)",
+                boxShadow:
+                  formData.attendance === opt.value
+                    ? "0 2px 8px color-mix(in srgb, var(--wedding-primary) 30%, transparent)"
+                    : "none",
+                transform:
+                  formData.attendance === opt.value
+                    ? "scale(1.02)"
+                    : "scale(1)",
               }}
             >
               <input
@@ -275,10 +314,12 @@ export function RsvpForm({ slug }: RsvpFormProps) {
       <button
         type="submit"
         disabled={status === "submitting"}
-        className="w-full rounded-lg px-6 py-3.5 text-sm font-medium text-white transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+        className="w-full rounded-lg px-6 py-3.5 text-sm font-medium text-white transition-all duration-200 disabled:opacity-50 hover:shadow-lg flex items-center justify-center gap-2"
         style={{
-          backgroundColor: "var(--wedding-primary)",
+          background: `linear-gradient(135deg, var(--wedding-primary), color-mix(in srgb, var(--wedding-primary) 80%, var(--wedding-accent)))`,
           fontFamily: "var(--wedding-font-body)",
+          boxShadow: "0 2px 10px color-mix(in srgb, var(--wedding-primary) 25%, transparent)",
+          letterSpacing: "0.04em",
         }}
       >
         {status === "submitting" ? (

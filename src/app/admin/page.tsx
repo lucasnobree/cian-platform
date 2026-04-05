@@ -85,6 +85,13 @@ function formatDate(dateStr: string): string {
   });
 }
 
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Bom dia";
+  if (hour < 18) return "Boa tarde";
+  return "Boa noite";
+}
+
 function DashboardSkeleton() {
   return (
     <div className="space-y-8">
@@ -162,6 +169,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
+          <p className="text-sm text-cian-600 font-medium mb-1">{getGreeting()} &#10045;</p>
           <h1
             className="text-2xl font-bold text-sand-800"
             style={{ fontFamily: "var(--font-display)" }}
@@ -172,15 +180,15 @@ export default function DashboardPage() {
             Visão geral dos seus casamentos e finanças
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <Link href="/admin/clientes/novo">
-            <Button size="sm">
+            <Button size="sm" className="shadow-md hover:shadow-lg transition-shadow bg-linear-to-r from-cian-600 to-cian-700">
               <Plus size={16} strokeWidth={1.5} />
               Novo Cliente
             </Button>
           </Link>
           <Link href="/admin/sites/novo">
-            <Button variant="secondary" size="sm">
+            <Button variant="secondary" size="sm" className="shadow-sm hover:shadow-md transition-shadow">
               <Globe size={16} strokeWidth={1.5} />
               Novo Site
             </Button>
@@ -189,9 +197,9 @@ export default function DashboardPage() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <Card className="stat-card-glass border-sand-100 hover:shadow-md transition-shadow duration-300">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-sand-500 uppercase tracking-wide">
@@ -201,15 +209,15 @@ export default function DashboardPage() {
                   {data.activeWeddings}
                 </p>
               </div>
-              <div className="w-10 h-10 rounded-lg bg-cian-50 flex items-center justify-center">
-                <LayoutDashboard size={20} className="text-cian-600" strokeWidth={1.5} />
+              <div className="w-11 h-11 rounded-xl bg-linear-to-br from-cian-400 to-cian-600 flex items-center justify-center shadow-sm">
+                <LayoutDashboard size={20} className="text-white" strokeWidth={1.5} />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-5">
+        <Card className="stat-card-glass border-sand-100 hover:shadow-md transition-shadow duration-300">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-sand-500 uppercase tracking-wide">
@@ -229,15 +237,15 @@ export default function DashboardPage() {
                   <p className="text-sm text-sand-400 mt-1">Nenhum agendado</p>
                 )}
               </div>
-              <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center">
-                <CalendarHeart size={20} className="text-amber-500" strokeWidth={1.5} />
+              <div className="w-11 h-11 rounded-xl bg-linear-to-br from-amber-400 to-amber-500 flex items-center justify-center shadow-sm">
+                <CalendarHeart size={20} className="text-white" strokeWidth={1.5} />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-5">
+        <Card className="stat-card-glass border-sand-100 hover:shadow-md transition-shadow duration-300">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-sand-500 uppercase tracking-wide">
@@ -250,15 +258,15 @@ export default function DashboardPage() {
                   {formatCurrency(data.pendingPayments.total)}
                 </p>
               </div>
-              <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center">
-                <CreditCard size={20} className="text-amber-500" strokeWidth={1.5} />
+              <div className="w-11 h-11 rounded-xl bg-linear-to-br from-amber-300 to-amber-500 flex items-center justify-center shadow-sm">
+                <CreditCard size={20} className="text-white" strokeWidth={1.5} />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-5">
+        <Card className="stat-card-glass border-sand-100 hover:shadow-md transition-shadow duration-300">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-sand-500 uppercase tracking-wide">
@@ -268,8 +276,8 @@ export default function DashboardPage() {
                   {formatCurrency(data.monthRevenue)}
                 </p>
               </div>
-              <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
-                <TrendingUp size={20} className="text-emerald-500" strokeWidth={1.5} />
+              <div className="w-11 h-11 rounded-xl bg-linear-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-sm">
+                <TrendingUp size={20} className="text-white" strokeWidth={1.5} />
               </div>
             </div>
           </CardContent>
@@ -288,15 +296,15 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             {data.upcomingDeadlines.length === 0 ? (
-              <p className="text-sm text-sand-400 text-center py-4">
+              <div className="text-sm text-sand-400 text-center py-8 empty-state-wave rounded-lg">
                 Nenhum prazo próximo
-              </p>
+              </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-1">
                 {data.upcomingDeadlines.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between py-2 border-b border-sand-100 last:border-0"
+                    className="flex items-center justify-between py-2.5 px-3 rounded-lg row-hover-accent"
                   >
                     <div>
                       <p className="text-sm font-medium text-sand-700">
@@ -333,15 +341,15 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             {data.recentClients.length === 0 ? (
-              <p className="text-sm text-sand-400 text-center py-4">
+              <div className="text-sm text-sand-400 text-center py-8 empty-state-wave rounded-lg">
                 Nenhum cliente cadastrado
-              </p>
+              </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-1">
                 {data.recentClients.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between py-2 border-b border-sand-100 last:border-0"
+                    className="flex items-center justify-between py-2.5 px-3 rounded-lg row-hover-accent"
                   >
                     <div>
                       <p className="text-sm font-medium text-sand-700">
@@ -371,7 +379,7 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex h-3 rounded-full overflow-hidden bg-sand-100">
+            <div className="flex h-3.5 rounded-full overflow-hidden bg-sand-100 pipeline-shine">
               {Object.entries(pipelineStageLabels).map(([stage]) => {
                 const count = data.pipelineCounts[stage] || 0;
                 if (count === 0) return null;

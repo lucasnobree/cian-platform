@@ -179,17 +179,17 @@ export default function ClientesPage() {
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-md">
+        <div className="relative flex-1 max-w-md group">
           <Search
             size={18}
             strokeWidth={1.5}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-sand-400"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-sand-400 group-focus-within:text-cian-500 transition-colors"
           />
           <Input
             placeholder="Buscar por nome, e-mail ou hashtag..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
+            className="pl-10 focus:shadow-md focus:shadow-cian-500/10 transition-shadow"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -219,12 +219,18 @@ export default function ClientesPage() {
             key={stage.value}
             onClick={() => setStageFilter(stage.value)}
             className={cn(
-              "px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200",
               stageFilter === stage.value
-                ? "bg-cian-600 text-white"
+                ? "bg-cian-600 text-white shadow-sm shadow-cian-600/25"
                 : "bg-sand-100 text-sand-600 hover:bg-sand-200"
             )}
           >
+            {stage.value && (
+              <span className={cn(
+                "w-1.5 h-1.5 rounded-full",
+                stageFilter === stage.value ? "bg-white" : "bg-sand-400"
+              )} />
+            )}
             {stage.label}
           </button>
         ))}
@@ -246,8 +252,8 @@ export default function ClientesPage() {
 
       {/* Empty State */}
       {!loading && !error && clients.length === 0 && (
-        <Card className="flex flex-col items-center justify-center py-16 px-6">
-          <Users size={48} strokeWidth={1} className="text-sand-300 mb-4" />
+        <Card className="flex flex-col items-center justify-center py-16 px-6 empty-state-wave overflow-hidden">
+          <Users size={48} strokeWidth={1} className="text-cian-300/50 mb-4" />
           <h3
             className="text-lg font-semibold text-sand-700"
             style={{ fontFamily: "var(--font-display)" }}
@@ -296,7 +302,7 @@ export default function ClientesPage() {
                   {clients.map((client) => (
                     <tr
                       key={client.id}
-                      className="hover:bg-sand-50/50 transition-colors cursor-pointer"
+                      className="hover:bg-sand-50 transition-all duration-200 cursor-pointer border-l-2 border-l-transparent hover:border-l-cian-400"
                       onClick={() => router.push(`/admin/clientes/${client.id}`)}
                     >
                       <td className="px-4 py-3">
@@ -380,13 +386,13 @@ export default function ClientesPage() {
                     </span>
                   </div>
                 </div>
-                <div className="space-y-2 min-h-[200px] rounded-lg bg-sand-100/50 p-2">
+                <div className="space-y-2 min-h-[200px] rounded-lg bg-sand-100/30 border border-sand-200/50 border-dashed p-2">
                   {stageClients.map((client) => (
                     <div
                       key={client.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, client.id)}
-                      className="rounded-lg border border-sand-200 bg-white p-3 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
+                      className="rounded-lg border border-sand-200 bg-white p-3 shadow-sm cursor-grab active:cursor-grabbing kanban-card-hover"
                     >
                       <Link href={`/admin/clientes/${client.id}`} className="block">
                         <div className="flex items-start gap-2">

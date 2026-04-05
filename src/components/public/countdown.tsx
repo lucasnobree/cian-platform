@@ -25,15 +25,27 @@ function calcTimeLeft(target: Date) {
 
 function TimeUnit({ value, label }: { value: number; label: string }) {
   return (
-    <div className="flex flex-col items-center">
+    <div
+      className="flex flex-col items-center rounded-lg px-3 py-3 sm:px-5 sm:py-4"
+      style={{
+        backgroundColor: "var(--wedding-secondary)",
+        border: "1px solid var(--wedding-accent)",
+        borderColor: `color-mix(in srgb, var(--wedding-accent) 25%, transparent)`,
+        boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+      }}
+    >
       <span
-        className="text-3xl sm:text-4xl md:text-5xl font-light tabular-nums"
-        style={{ color: "var(--wedding-primary)" }}
+        className="text-3xl sm:text-4xl md:text-5xl font-semibold tabular-nums"
+        style={{
+          color: "var(--wedding-primary)",
+          fontFamily: "var(--wedding-font-heading)",
+          lineHeight: 1.1,
+        }}
       >
         {String(value).padStart(2, "0")}
       </span>
       <span
-        className="text-[10px] sm:text-xs uppercase tracking-[0.2em] mt-1 opacity-60"
+        className="text-[10px] sm:text-xs uppercase tracking-[0.2em] mt-1.5 opacity-50"
         style={{ color: "var(--wedding-text)", fontFamily: "var(--wedding-font-body)" }}
       >
         {label}
@@ -88,28 +100,40 @@ export function Countdown({ weddingDate }: CountdownProps) {
   }
 
   return (
-    <div className="flex items-center justify-center gap-4 sm:gap-8 py-8">
+    <div className="flex items-center justify-center gap-3 sm:gap-5 py-8">
       <TimeUnit value={timeLeft.days} label="Dias" />
-      <span
-        className="text-2xl opacity-30 -mt-4"
-        style={{ color: "var(--wedding-primary)" }}
-      >
-        :
-      </span>
+      <div className="flex flex-col gap-1.5 -mt-3 opacity-25">
+        <div
+          className="w-1 h-1 rounded-full"
+          style={{ backgroundColor: "var(--wedding-primary)" }}
+        />
+        <div
+          className="w-1 h-1 rounded-full"
+          style={{ backgroundColor: "var(--wedding-primary)" }}
+        />
+      </div>
       <TimeUnit value={timeLeft.hours} label="Horas" />
-      <span
-        className="text-2xl opacity-30 -mt-4"
-        style={{ color: "var(--wedding-primary)" }}
-      >
-        :
-      </span>
+      <div className="flex flex-col gap-1.5 -mt-3 opacity-25">
+        <div
+          className="w-1 h-1 rounded-full"
+          style={{ backgroundColor: "var(--wedding-primary)" }}
+        />
+        <div
+          className="w-1 h-1 rounded-full"
+          style={{ backgroundColor: "var(--wedding-primary)" }}
+        />
+      </div>
       <TimeUnit value={timeLeft.minutes} label="Min" />
-      <span
-        className="text-2xl opacity-30 -mt-4"
-        style={{ color: "var(--wedding-primary)" }}
-      >
-        :
-      </span>
+      <div className="flex flex-col gap-1.5 -mt-3 opacity-25">
+        <div
+          className="w-1 h-1 rounded-full"
+          style={{ backgroundColor: "var(--wedding-primary)" }}
+        />
+        <div
+          className="w-1 h-1 rounded-full"
+          style={{ backgroundColor: "var(--wedding-primary)" }}
+        />
+      </div>
       <TimeUnit value={timeLeft.seconds} label="Seg" />
     </div>
   );
