@@ -42,8 +42,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ data, total, page, limit });
   } catch (error) {
     console.error("[GET /api/clients]", error);
-    const message = error instanceof Error ? error.message : String(error);
-    return NextResponse.json({ error: "Internal server error", debug: message }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
