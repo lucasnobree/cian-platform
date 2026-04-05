@@ -6,7 +6,6 @@ import Link from "next/link";
 import {
   ArrowLeft,
   Heart,
-  User,
   CalendarDays,
   Briefcase,
   ChevronDown,
@@ -288,19 +287,31 @@ export default function NovoClientePage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Bride & Groom side by side */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Bride Section */}
+        {/* Couple Section */}
         <Section
-          title="Dados da Noiva"
+          title="Dados do Casal"
           icon={<Heart size={16} strokeWidth={1.5} />}
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Field label="Nome completo" required error={errors.brideFullName}>
+            <Field label="Nome da noiva" required error={errors.brideFullName}>
               <Input
                 value={form.brideFullName}
                 onChange={(e) => set("brideFullName", e.target.value)}
                 placeholder="Nome completo da noiva"
+              />
+            </Field>
+            <Field label="Nome do noivo" required error={errors.groomFullName}>
+              <Input
+                value={form.groomFullName}
+                onChange={(e) => set("groomFullName", e.target.value)}
+                placeholder="Nome completo do noivo"
+              />
+            </Field>
+            <Field label="Hashtag do casal">
+              <Input
+                value={form.coupleHashtag}
+                onChange={(e) => set("coupleHashtag", e.target.value)}
+                placeholder="#NoivaENoivo2026"
               />
             </Field>
             <Field label="E-mail" required error={errors.brideEmail}>
@@ -318,13 +329,6 @@ export default function NovoClientePage() {
                 placeholder="(11) 99999-9999"
               />
             </Field>
-            <Field label="CPF" error={errors.brideCpf}>
-              <Input
-                value={form.brideCpf}
-                onChange={(e) => set("brideCpf", e.target.value)}
-                placeholder="000.000.000-00"
-              />
-            </Field>
             <Field label="Instagram">
               <Input
                 value={form.brideInstagram}
@@ -334,52 +338,6 @@ export default function NovoClientePage() {
             </Field>
           </div>
         </Section>
-
-        {/* Groom Section */}
-        <Section
-          title="Dados do Noivo"
-          icon={<User size={16} strokeWidth={1.5} />}
-        >
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Field label="Nome completo" required error={errors.groomFullName}>
-              <Input
-                value={form.groomFullName}
-                onChange={(e) => set("groomFullName", e.target.value)}
-                placeholder="Nome completo do noivo"
-              />
-            </Field>
-            <Field label="E-mail" error={errors.groomEmail}>
-              <Input
-                type="email"
-                value={form.groomEmail}
-                onChange={(e) => set("groomEmail", e.target.value)}
-                placeholder="email@exemplo.com"
-              />
-            </Field>
-            <Field label="Telefone">
-              <Input
-                value={form.groomPhone}
-                onChange={(e) => set("groomPhone", e.target.value)}
-                placeholder="(11) 99999-9999"
-              />
-            </Field>
-            <Field label="CPF" error={errors.groomCpf}>
-              <Input
-                value={form.groomCpf}
-                onChange={(e) => set("groomCpf", e.target.value)}
-                placeholder="000.000.000-00"
-              />
-            </Field>
-            <Field label="Instagram">
-              <Input
-                value={form.groomInstagram}
-                onChange={(e) => set("groomInstagram", e.target.value)}
-                placeholder="@usuario"
-              />
-            </Field>
-          </div>
-        </Section>
-        </div>
 
         {/* Wedding Section */}
         <Section
@@ -448,13 +406,6 @@ export default function NovoClientePage() {
                 value={form.estimatedGuests}
                 onChange={(e) => set("estimatedGuests", e.target.value)}
                 placeholder="150"
-              />
-            </Field>
-            <Field label="Hashtag do casal">
-              <Input
-                value={form.coupleHashtag}
-                onChange={(e) => set("coupleHashtag", e.target.value)}
-                placeholder="#NoivaENoivo2026"
               />
             </Field>
           </div>
