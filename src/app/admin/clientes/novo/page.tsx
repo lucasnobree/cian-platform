@@ -259,7 +259,7 @@ export default function NovoClientePage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link href="/admin/clientes">
@@ -288,12 +288,14 @@ export default function NovoClientePage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Bride & Groom side by side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Bride Section */}
         <Section
           title="Dados da Noiva"
           icon={<Heart size={16} strokeWidth={1.5} />}
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Field label="Nome completo" required error={errors.brideFullName}>
               <Input
                 value={form.brideFullName}
@@ -338,7 +340,7 @@ export default function NovoClientePage() {
           title="Dados do Noivo"
           icon={<User size={16} strokeWidth={1.5} />}
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Field label="Nome completo" required error={errors.groomFullName}>
               <Input
                 value={form.groomFullName}
@@ -377,13 +379,14 @@ export default function NovoClientePage() {
             </Field>
           </div>
         </Section>
+        </div>
 
         {/* Wedding Section */}
         <Section
           title="Casamento"
           icon={<CalendarDays size={16} strokeWidth={1.5} />}
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Field label="Data do casamento" required error={errors.weddingDate}>
               <Input
                 type="date"
@@ -463,7 +466,7 @@ export default function NovoClientePage() {
           icon={<Briefcase size={16} strokeWidth={1.5} />}
           defaultOpen={false}
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Field label="Etapa do pipeline">
               <Select
                 value={form.pipelineStage}
@@ -519,7 +522,7 @@ export default function NovoClientePage() {
                 placeholder="noiva-e-noivo"
               />
             </Field>
-            <div className="sm:col-span-2">
+            <div className="sm:col-span-2 lg:col-span-3">
               <Field label="Tags (separadas por virgula)">
                 <Input
                   value={form.tags}
@@ -528,7 +531,7 @@ export default function NovoClientePage() {
                 />
               </Field>
             </div>
-            <div className="sm:col-span-2">
+            <div className="sm:col-span-2 lg:col-span-3">
               <Field label="Observações">
                 <Textarea
                   value={form.notes}
