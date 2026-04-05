@@ -39,5 +39,6 @@ export const config = {
     "/api/users/:path*",
     "/api/profile/:path*",
     "/api/websites/:path*",
+    "/api/config/:path*",
   ],
 };

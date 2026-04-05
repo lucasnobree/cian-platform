@@ -62,6 +62,8 @@ interface Client {
   leadSource: string | null;
   referredBy: string | null;
   websiteSlug: string | null;
+  trelloBoardId: string | null;
+  trelloBoardUrl: string | null;
   tags: string[];
   notes: string | null;
   createdAt: string;
@@ -126,7 +128,7 @@ function InfoRow({
   if (!value) return null;
   return (
     <div className="flex items-start gap-3 py-2">
-      <Icon size={16} strokeWidth={1.5} className="text-sand-400 mt-0.5 flex-shrink-0" />
+      <Icon size={16} strokeWidth={1.5} className="text-sand-400 mt-0.5 shrink-0" />
       <div>
         <p className="text-xs text-sand-400">{label}</p>
         <p className="text-sm text-sand-700">{value}</p>
@@ -148,6 +150,7 @@ export default function ClienteDetailPage({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [stageUpdating, setStageUpdating] = useState(false);
+  const [trelloCreating, setTrelloCreating] = useState(false);
   const [activeTab, setActiveTab] = useState("info");
 
   const fetchClient = useCallback(async () => {
@@ -189,6 +192,26 @@ export default function ClienteDetailPage({
       setClient((prev) => prev ? { ...prev, pipelineStage: prevStage } : prev);
     } finally {
       setStageUpdating(false);
+    }
+  };
+
+  const handleCreateTrelloBoard = async () => {
+    if (!client || trelloCreating) return;
+    setTrelloCreating(true);
+    try {
+      // Trigger board creation by re-sending the current stage
+      const res = await fetch(`/api/clients/${id}/stage`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stage: "contract_signed" }),
+      });
+      if (!res.ok) throw new Error();
+      // Refetch client to get the new trello data
+      await fetchClient();
+    } catch {
+      alert("Erro ao criar board no Trello.");
+    } finally {
+      setTrelloCreating(false);
     }
   };
 
@@ -259,7 +282,37 @@ export default function ClienteDetailPage({
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
+          {client.trelloBoardUrl && (
+            <a
+              href={client.trelloBoardUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button variant="secondary" size="sm">
+                <ExternalLink size={16} strokeWidth={1.5} />
+                <span className="hidden sm:inline">Abrir no Trello</span>
+              </Button>
+            </a>
+          )}
+          {!client.trelloBoardUrl &&
+            ["contract_signed", "in_production", "delivered", "completed"].includes(client.pipelineStage) && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleCreateTrelloBoard}
+                disabled={trelloCreating}
+              >
+                {trelloCreating ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <ExternalLink size={16} strokeWidth={1.5} />
+                )}
+                <span className="hidden sm:inline">
+                  {trelloCreating ? "Criando..." : "Criar Board no Trello"}
+                </span>
+              </Button>
+            )}
           <Button
             variant="destructive"
             size="sm"
@@ -482,7 +535,7 @@ export default function ClienteDetailPage({
                     <Tag
                       size={16}
                       strokeWidth={1.5}
-                      className="text-sand-400 mt-0.5 flex-shrink-0"
+                      className="text-sand-400 mt-0.5 shrink-0"
                     />
                     <div>
                       <p className="text-xs text-sand-400">Tags</p>

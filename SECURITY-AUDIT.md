@@ -197,3 +197,49 @@
 #### Low Priority
 7. **Trusted Types**: When browser support improves, consider adding Trusted Types CSP directive for additional DOM XSS protection.
 8. **Sanitization tests**: Add unit tests for edge cases in `stripHtml`, `sanitizeUrl`, and `safeCssValue` to prevent regressions.
+
+---
+
+## Infrastructure Status
+
+**Date:** 2026-04-04
+**Auditor:** Infrastructure Agent (automated)
+**Scope:** External service integrations, environment variable documentation, production readiness
+
+---
+
+### Service Configuration Status
+
+| Service | Status | Env Vars | Notes |
+|---------|--------|----------|-------|
+| Database (Supabase PostgreSQL) | **Configured** | `DATABASE_URL`, `DIRECT_URL` | SSL enabled, pool limited to 5 connections |
+| Supabase Client | **Configured** | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | Used for storage and admin operations |
+| Auth (NextAuth) | **Configured** | `NEXTAUTH_URL`, `NEXTAUTH_SECRET` | JWT strategy with credentials provider |
+| Trello Integration | **Optional** | `TRELLO_API_KEY`, `TRELLO_TOKEN` | For project management sync |
+| Payment (AbacatePay) | **Optional** | `ABACATEPAY_API_KEY`, `ABACATEPAY_WEBHOOK_SECRET` | Gift payment processing |
+| Email (Resend) | **Stub ready** | `RESEND_API_KEY`, `EMAIL_FROM` | Graceful degradation when unconfigured |
+| Storage (R2/Uploadthing) | **Stub ready** | `STORAGE_URL`, `STORAGE_KEY` | Placeholder — needs provider selection and implementation |
+| Monitoring (Sentry) | **Stub ready** | `SENTRY_DSN` | Basic envelope API; recommend @sentry/nextjs for full integration |
+
+### Environment Variable Documentation
+
+- `.env.example` updated with all variables grouped by category
+- Each variable includes a description comment and placeholder value
+- Required vs optional clearly marked by section headers
+- Secrets use empty placeholder values (no real data committed)
+
+### Recommendations for Production Readiness
+
+#### High Priority
+1. **Choose and implement a storage provider**: The storage stub (`src/lib/services/storage.ts`) needs a real implementation. Cloudflare R2 is recommended for cost-effectiveness; Uploadthing for simplicity.
+2. **Install @sentry/nextjs**: The basic Sentry stub (`src/lib/sentry.ts`) sends minimal error events. The official SDK adds source maps, performance tracing, session replay, and automatic breadcrumbs.
+3. **Verify Resend sender domain**: The email service (`src/lib/services/email.ts`) requires a verified domain in Resend to avoid deliverability issues.
+
+#### Medium Priority
+4. **Add email sending to RSVP and payment flows**: Wire the email template helpers into the existing RSVP confirmation and payment webhook handlers.
+5. **Environment validation at startup**: Add a validation step (e.g., in `instrumentation.ts` or a custom server entry) that checks required env vars are set and logs warnings for optional missing ones.
+6. **Rotate `NEXTAUTH_SECRET` procedure**: Document a procedure for rotating the NextAuth secret without logging out all active users.
+
+#### Low Priority
+7. **Email template externalization**: Move email HTML templates to separate files or use a templating library (e.g., react-email) for maintainability.
+8. **Storage CDN**: If using Cloudflare R2, configure a custom domain with Cloudflare CDN for optimal image delivery performance.
