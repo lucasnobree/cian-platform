@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { MaterialsTab } from "@/components/admin/materials-tab";
+import { StepsTab } from "@/components/admin/steps-tab";
 
 interface Client {
   id: string;
@@ -78,6 +79,7 @@ interface Client {
     interactions: number;
     gifts: number;
     giftItems: number;
+    projectSteps: number;
   };
   websiteConfig?: { id: string } | null;
 }
@@ -256,6 +258,7 @@ export default function ClienteDetailPage({
 
   const tabs = [
     { key: "info", label: "Informações" },
+    { key: "steps", label: `Etapas${client._count?.projectSteps ? ` (${client._count.projectSteps})` : ""}` },
     { key: "docs", label: `Materiais${client._count?.documents ? ` (${client._count.documents})` : ""}` },
     { key: "interactions", label: `Interações${client._count?.interactions ? ` (${client._count.interactions})` : ""}` },
     { key: "payments", label: "Pagamentos" },
@@ -583,6 +586,11 @@ export default function ClienteDetailPage({
             </Card>
           )}
         </div>
+      )}
+
+      {/* Tab Content: Etapas */}
+      {activeTab === "steps" && (
+        <StepsTab clientId={id} />
       )}
 
       {/* Tab Content: Materiais */}

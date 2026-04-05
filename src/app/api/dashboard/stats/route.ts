@@ -13,6 +13,8 @@ export async function GET() {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
+    const fourteenDaysFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+
     const [
       activeWeddings,
       nextWedding,
@@ -21,6 +23,7 @@ export async function GET() {
       recentClients,
       upcomingDeadlines,
       pipelineCounts,
+      upcomingStepDeadlines,
     ] = await Promise.all([
       // Active weddings
       prisma.client.count({
@@ -61,6 +64,28 @@ export async function GET() {
         by: ["pipelineStage"],
         _count: true,
       }),
+      // Upcoming step deadlines (within 14 days, not completed)
+      prisma.projectStep.findMany({
+        where: {
+          status: { not: "completed" },
+          OR: [
+            { revisedDeadline: { lte: fourteenDaysFromNow } },
+            { deadline: { lte: fourteenDaysFromNow }, revisedDeadline: null },
+          ],
+        },
+        orderBy: { deadline: "asc" },
+        take: 10,
+        select: {
+          id: true,
+          name: true,
+          deadline: true,
+          revisedDeadline: true,
+          status: true,
+          client: {
+            select: { id: true, brideFullName: true, groomFullName: true },
+          },
+        },
+      }),
     ]);
 
     const daysUntilNext = nextWedding
@@ -81,6 +106,16 @@ export async function GET() {
         daysUntil: Math.ceil((c.weddingDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
       })),
       pipelineCounts: Object.fromEntries(pipelineCounts.map((p: { pipelineStage: string; _count: number }) => [p.pipelineStage, p._count])),
+      upcomingStepDeadlines: upcomingStepDeadlines.map((s) => {
+        const effectiveDeadline = s.revisedDeadline || s.deadline;
+        return {
+          ...s,
+          effectiveDeadline,
+          daysUntil: effectiveDeadline
+            ? Math.ceil((new Date(effectiveDeadline).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+            : null,
+        };
+      }),
     });
   } catch (error) {
     console.error("[GET /api/dashboard/stats]", error);

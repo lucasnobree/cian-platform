@@ -16,7 +16,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const client = await prisma.client.findUnique({
       where: { id },
       include: {
-        _count: { select: { documents: true, interactions: true, gifts: true, giftItems: true } },
+        _count: { select: { documents: true, interactions: true, gifts: true, giftItems: true, projectSteps: true } },
         websiteConfig: { select: { id: true } },
       },
     });

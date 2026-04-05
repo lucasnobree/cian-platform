@@ -84,10 +84,33 @@ model Client {
   websiteConfig   WebsiteConfig?
   giftItems       GiftItem[]
   gifts           Gift[]
+  projectSteps    ProjectStep[]
 
   @@index([pipelineStage])
   @@index([weddingDate])
   @@index([websiteSlug])
+}
+
+model ProjectStep {
+  id              String    @id @default(cuid())
+  clientId        String
+  client          Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  name            String
+  description     String?
+  sortOrder       Int       @default(0)
+  status          String    @default("pending")  // pending | in_progress | review | completed
+  deadline        DateTime?
+  revisedDeadline DateTime?
+  revisionReason  String?
+  completedAt     DateTime?
+  requiresStep    String?   // ID of a step that must be completed first
+  checklist       Json?     // [{id, text, checked}]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([clientId])
+  @@index([status])
+  @@index([deadline])
 }
 
 model Document {
