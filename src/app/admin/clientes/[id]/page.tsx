@@ -18,12 +18,16 @@ import {
   PartyPopper,
   Briefcase,
   Tag,
-  FileText,
   MessageSquare,
   DollarSign,
   Globe,
   Loader2,
   ExternalLink,
+  Pencil,
+  Upload,
+  Download,
+  Image,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +39,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { MaterialsTab } from "@/components/admin/materials-tab";
 
 interface Client {
   id: string;
@@ -251,7 +256,7 @@ export default function ClienteDetailPage({
 
   const tabs = [
     { key: "info", label: "Informações" },
-    { key: "docs", label: `Documentos${client._count?.documents ? ` (${client._count.documents})` : ""}` },
+    { key: "docs", label: `Materiais${client._count?.documents ? ` (${client._count.documents})` : ""}` },
     { key: "interactions", label: `Interações${client._count?.interactions ? ` (${client._count.interactions})` : ""}` },
     { key: "payments", label: "Pagamentos" },
     { key: "site", label: "Site" },
@@ -313,6 +318,12 @@ export default function ClienteDetailPage({
                 </span>
               </Button>
             )}
+          <Link href={`/admin/clientes/${id}/editar`}>
+            <Button variant="secondary" size="sm">
+              <Pencil size={16} strokeWidth={1.5} />
+              <span className="hidden sm:inline">Editar</span>
+            </Button>
+          </Link>
           <Button
             variant="destructive"
             size="sm"
@@ -574,14 +585,9 @@ export default function ClienteDetailPage({
         </div>
       )}
 
-      {/* Tab Content: Placeholders */}
+      {/* Tab Content: Materiais */}
       {activeTab === "docs" && (
-        <Card className="flex flex-col items-center justify-center py-16">
-          <FileText size={48} strokeWidth={1} className="text-sand-300 mb-4" />
-          <p className="text-sm text-sand-500">
-            Gerenciamento de documentos em breve
-          </p>
-        </Card>
+        <MaterialsTab clientId={id} onUpdate={fetchClient} />
       )}
       {activeTab === "interactions" && (
         <Card className="flex flex-col items-center justify-center py-16">

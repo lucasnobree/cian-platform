@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -13,9 +13,6 @@ import {
   MapPin,
   Calendar,
   Users,
-  MoreHorizontal,
-  Eye,
-  Trash2,
   GripVertical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -77,8 +74,6 @@ export default function ClientesPage() {
   const [view, setView] = useState<"list" | "kanban">("list");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
 
   // Debounce search
   useEffect(() => {
@@ -121,30 +116,7 @@ export default function ClientesPage() {
     fetchClients();
   }, [fetchClients]);
 
-  // Close menu on outside click
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setOpenMenu(null);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
   const totalPages = Math.ceil(total / limit);
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir este cliente?")) return;
-    try {
-      const res = await fetch(`/api/clients/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error();
-      fetchClients();
-    } catch {
-      alert("Erro ao excluir cliente.");
-    }
-    setOpenMenu(null);
-  };
 
   // Kanban drag and drop
   const handleDragStart = (e: React.DragEvent, clientId: string) => {
@@ -318,9 +290,6 @@ export default function ClientesPage() {
                     <th className="text-left font-medium text-sand-500 px-4 py-3 hidden lg:table-cell">
                       Cidade
                     </th>
-                    <th className="text-right font-medium text-sand-500 px-4 py-3">
-                      Ações
-                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-sand-100">
@@ -346,41 +315,6 @@ export default function ClientesPage() {
                       </td>
                       <td className="px-4 py-3 hidden lg:table-cell text-sand-600">
                         {[client.city, client.state].filter(Boolean).join(", ") || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="relative inline-block" ref={openMenu === client.id ? menuRef : null}>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenMenu(openMenu === client.id ? null : client.id);
-                            }}
-                            className="p-1.5 rounded-lg text-sand-400 hover:bg-sand-100 hover:text-sand-600 transition-colors"
-                          >
-                            <MoreHorizontal size={16} strokeWidth={1.5} />
-                          </button>
-                          {openMenu === client.id && (
-                            <div className="absolute right-0 mt-1 w-40 rounded-lg border border-sand-200 bg-white shadow-lg py-1 z-10">
-                              <Link
-                                href={`/admin/clientes/${client.id}`}
-                                onClick={(e) => e.stopPropagation()}
-                                className="flex items-center gap-2 px-3 py-2 text-sm text-sand-700 hover:bg-sand-50"
-                              >
-                                <Eye size={14} strokeWidth={1.5} />
-                                Ver detalhes
-                              </Link>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDelete(client.id);
-                                }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                              >
-                                <Trash2 size={14} strokeWidth={1.5} />
-                                Excluir
-                              </button>
-                            </div>
-                          )}
-                        </div>
                       </td>
                     </tr>
                   ))}
