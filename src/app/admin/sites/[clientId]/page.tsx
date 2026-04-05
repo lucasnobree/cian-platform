@@ -22,6 +22,10 @@ import {
   CheckCircle2,
   AlertCircle,
   ExternalLink,
+  Upload,
+  FileArchive,
+  Package,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,6 +77,7 @@ interface ClientData {
   weddingDate: string;
   websiteSlug: string | null;
   websiteStatus: string;
+  websiteType: string;
   customDomain: string | null;
 }
 
@@ -258,6 +263,10 @@ export default function SiteEditorPage() {
   const [loading, setLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [activeTab, setActiveTab] = useState<"editor" | "preview">("editor");
+  const [uploadingZip, setUploadingZip] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const [uploadDragOver, setUploadDragOver] = useState(false);
+  const zipInputRef = useRef<HTMLInputElement>(null);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -349,6 +358,64 @@ export default function SiteEditorPage() {
     }
   }
 
+  // Switch website type
+  async function switchWebsiteType(type: "template" | "custom") {
+    if (!client) return;
+    try {
+      await fetch(`/api/clients/${client.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ websiteType: type }),
+      });
+      setClient((prev) => (prev ? { ...prev, websiteType: type } : prev));
+    } catch {
+      // Silently fail
+    }
+  }
+
+  // Upload custom site ZIP
+  async function handleZipUpload(file: File) {
+    if (!file) return;
+    setUploadingZip(true);
+    setUploadError("");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch(`/api/websites/${clientId}/upload`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Erro ao enviar arquivo");
+      }
+
+      setClient((prev) => (prev ? { ...prev, websiteType: "custom" } : prev));
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Erro ao enviar arquivo");
+    } finally {
+      setUploadingZip(false);
+      if (zipInputRef.current) zipInputRef.current.value = "";
+    }
+  }
+
+  // Delete custom site
+  async function handleDeleteCustomSite() {
+    if (!confirm("Remover o site customizado? O site voltará ao template dinâmico.")) return;
+    try {
+      const res = await fetch(`/api/websites/${clientId}/upload`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Erro ao remover");
+      setClient((prev) => (prev ? { ...prev, websiteType: "template" } : prev));
+    } catch {
+      alert("Erro ao remover site customizado");
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -363,10 +430,173 @@ export default function SiteEditorPage() {
   // Build Google Fonts URL for preview
   const fontsUrl = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(config.fontHeading)}&family=${encodeURIComponent(config.fontBody)}:wght@400;600&display=swap`;
 
+  const isCustomSite = client?.websiteType === "custom";
+
   // ────────────────── Editor Panel ──────────────────
   const editorPanel = (
     <div className="space-y-4 pb-8">
-      {/* Visual Identity */}
+      {/* Website Type Selector */}
+      <div className="border border-sand-200 rounded-xl bg-white overflow-hidden">
+        <div className="px-5 py-4 border-b border-sand-100">
+          <div className="flex items-center gap-3">
+            <Package size={16} className="text-cian-600" strokeWidth={1.5} />
+            <span className="text-sm font-semibold text-sand-800">Tipo de Site</span>
+          </div>
+        </div>
+        <div className="px-5 py-4 space-y-4">
+          {/* Type cards */}
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => switchWebsiteType("template")}
+              className={cn(
+                "rounded-xl border-2 p-4 text-left transition-all",
+                !isCustomSite
+                  ? "border-cian-500 bg-cian-50/40 shadow-sm"
+                  : "border-sand-200 hover:border-sand-300"
+              )}
+            >
+              <Palette
+                size={20}
+                className={cn("mb-2", !isCustomSite ? "text-cian-600" : "text-sand-400")}
+                strokeWidth={1.5}
+              />
+              <p className={cn("text-sm font-semibold", !isCustomSite ? "text-cian-700" : "text-sand-700")}>
+                Template Dinamico
+              </p>
+              <p className="text-xs text-sand-500 mt-1">
+                Editor visual com cores, fontes e secoes configuráveis
+              </p>
+            </button>
+            <button
+              type="button"
+              onClick={() => switchWebsiteType("custom")}
+              className={cn(
+                "rounded-xl border-2 p-4 text-left transition-all",
+                isCustomSite
+                  ? "border-cian-500 bg-cian-50/40 shadow-sm"
+                  : "border-sand-200 hover:border-sand-300"
+              )}
+            >
+              <FileArchive
+                size={20}
+                className={cn("mb-2", isCustomSite ? "text-cian-600" : "text-sand-400")}
+                strokeWidth={1.5}
+              />
+              <p className={cn("text-sm font-semibold", isCustomSite ? "text-cian-700" : "text-sand-700")}>
+                Site Customizado
+              </p>
+              <p className="text-xs text-sand-500 mt-1">
+                Upload de HTML/CSS/JS em arquivo .zip
+              </p>
+            </button>
+          </div>
+
+          {/* Custom site upload area (shown when custom is selected) */}
+          {isCustomSite && (
+            <div className="space-y-3">
+              {uploadError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+                  {uploadError}
+                </div>
+              )}
+
+              {/* Upload zone */}
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setUploadDragOver(true);
+                }}
+                onDragLeave={() => setUploadDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setUploadDragOver(false);
+                  const file = e.dataTransfer.files?.[0];
+                  if (file) handleZipUpload(file);
+                }}
+                className={cn(
+                  "rounded-xl border-2 border-dashed p-6 text-center transition-colors",
+                  uploadDragOver
+                    ? "border-cian-400 bg-cian-50/30"
+                    : "border-sand-200 hover:border-sand-300"
+                )}
+              >
+                <input
+                  ref={zipInputRef}
+                  type="file"
+                  accept=".zip,application/zip,application/x-zip-compressed"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleZipUpload(file);
+                  }}
+                  className="hidden"
+                />
+                <Upload
+                  size={28}
+                  strokeWidth={1.5}
+                  className="mx-auto mb-2 text-sand-400"
+                />
+                <p className="text-sm text-sand-600 mb-1">
+                  Arraste o arquivo .zip aqui ou{" "}
+                  <button
+                    type="button"
+                    onClick={() => zipInputRef.current?.click()}
+                    className="text-cian-600 font-medium hover:underline"
+                    disabled={uploadingZip}
+                  >
+                    selecione do computador
+                  </button>
+                </p>
+                <p className="text-xs text-sand-400">
+                  Arquivo .zip com index.html na raiz — max. 50MB
+                </p>
+                {uploadingZip && (
+                  <div className="mt-3 flex items-center justify-center gap-2 text-sm text-cian-600">
+                    <Loader2 size={16} className="animate-spin" />
+                    Enviando e extraindo...
+                  </div>
+                )}
+              </div>
+
+              {/* Status and actions */}
+              {client?.websiteSlug && (
+                <div className="rounded-lg bg-sand-50 border border-sand-200 p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Globe size={14} className="text-cian-600" strokeWidth={1.5} />
+                    <span className="text-sm font-medium text-cian-700">
+                      Site customizado ativo
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <a
+                      href={`/${client.websiteSlug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Button variant="secondary" size="sm">
+                        <ExternalLink size={14} strokeWidth={1.5} />
+                        Preview
+                      </Button>
+                    </a>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleDeleteCustomSite}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 size={14} strokeWidth={1.5} />
+                      Remover site customizado
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Visual Identity (only show template editor when in template mode) */}
+      {!isCustomSite && <>
       <Section title="Identidade Visual" icon={Palette} defaultOpen>
         <div className="grid grid-cols-2 gap-4">
           <ColorField
@@ -666,6 +896,7 @@ export default function SiteEditorPage() {
           </div>
         )}
       </Section>
+      </>}
     </div>
   );
 

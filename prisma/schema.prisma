@@ -72,6 +72,7 @@ model Client {
   tags            String[]
   websiteSlug     String?   @unique
   websiteStatus   String    @default("draft")
+  websiteType     String    @default("template")  // "template" | "custom"
   customDomain    String?   @unique
   trelloBoardId   String?
   trelloBoardUrl  String?

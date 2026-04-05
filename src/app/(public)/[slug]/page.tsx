@@ -53,6 +53,24 @@ async function getWeddingData(slug: string) {
   return client;
 }
 
+function CustomSiteIframe({ slug }: { slug: string }) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const iframeSrc = `${supabaseUrl}/storage/v1/object/public/custom-sites/${slug}/index.html`;
+
+  return (
+    <iframe
+      src={iframeSrc}
+      title="Site de casamento"
+      style={{
+        width: "100vw",
+        height: "100vh",
+        border: "none",
+        display: "block",
+      }}
+    />
+  );
+}
+
 // ────────────────── Metadata ──────────────────
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -153,7 +171,16 @@ export default async function WeddingPage({ params }: PageProps) {
   const { slug } = await params;
   const client = await getWeddingData(slug);
 
-  if (!client || !client.websiteConfig) {
+  if (!client) {
+    return <NotFoundPage />;
+  }
+
+  // If custom site, render full-page iframe
+  if (client.websiteType === "custom") {
+    return <CustomSiteIframe slug={slug} />;
+  }
+
+  if (!client.websiteConfig) {
     return <NotFoundPage />;
   }
 

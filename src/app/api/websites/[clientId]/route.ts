@@ -26,6 +26,7 @@ export async function GET(
         weddingDate: true,
         websiteSlug: true,
         websiteStatus: true,
+        websiteType: true,
         customDomain: true,
         websiteConfig: true,
       },

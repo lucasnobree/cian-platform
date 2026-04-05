@@ -79,6 +79,7 @@ export const clientCreateSchema = z.object({
   customDomain: z.string().max(253)
     .regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/, "Domínio inválido")
     .optional(),
+  websiteType: z.enum(["template", "custom"]).optional(),
   notes: z.string().max(5000).transform(sanitizeText).optional(),
 });
 
