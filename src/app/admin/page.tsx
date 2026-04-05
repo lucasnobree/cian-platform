@@ -45,6 +45,18 @@ interface DashboardData {
     weddingDate: string;
     daysUntil: number;
   }[];
+  upcomingStepDeadlines: {
+    id: string;
+    name: string;
+    status: string;
+    effectiveDeadline: string | null;
+    daysUntil: number | null;
+    client: {
+      id: string;
+      brideFullName: string;
+      groomFullName: string;
+    };
+  }[];
   pipelineCounts: Record<string, number>;
 }
 
@@ -286,7 +298,7 @@ export default function DashboardPage() {
 
       {/* Two columns */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Próximos Prazos */}
+        {/* Próximos Prazos (Etapas) */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -295,36 +307,46 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {data.upcomingDeadlines.length === 0 ? (
+            {data.upcomingStepDeadlines.length === 0 ? (
               <div className="text-sm text-sand-400 text-center py-8 empty-state-wave rounded-lg">
                 Nenhum prazo próximo
               </div>
             ) : (
               <div className="space-y-1">
-                {data.upcomingDeadlines.map((item) => (
-                  <div
+                {data.upcomingStepDeadlines.map((item) => (
+                  <Link
                     key={item.id}
-                    className="flex items-center justify-between py-2.5 px-3 rounded-lg row-hover-accent"
+                    href={`/admin/clientes/${item.client.id}?tab=steps`}
+                    className="flex items-center justify-between py-2.5 px-3 rounded-lg row-hover-accent cursor-pointer"
                   >
                     <div>
                       <p className="text-sm font-medium text-sand-700">
-                        {item.brideFullName.split(" ")[0]} &{" "}
-                        {item.groomFullName.split(" ")[0]}
+                        {item.name}
                       </p>
                       <p className="text-xs text-sand-400">
-                        {formatDate(item.weddingDate)}
+                        {item.client.brideFullName.split(" ")[0]} &{" "}
+                        {item.client.groomFullName.split(" ")[0]}
+                        {item.effectiveDeadline && (
+                          <> · {formatDate(item.effectiveDeadline)}</>
+                        )}
                       </p>
                     </div>
-                    <span
-                      className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                        item.daysUntil <= 15
-                          ? "bg-amber-100 text-amber-700"
-                          : "bg-sand-100 text-sand-500"
-                      }`}
-                    >
-                      D-{item.daysUntil}
-                    </span>
-                  </div>
+                    {item.daysUntil !== null && (
+                      <span
+                        className={`text-xs font-semibold px-2 py-1 rounded-full shrink-0 ${
+                          item.daysUntil <= 0
+                            ? "bg-red-100 text-red-700"
+                            : item.daysUntil <= 7
+                            ? "bg-amber-100 text-amber-700"
+                            : "bg-sand-100 text-sand-500"
+                        }`}
+                      >
+                        {item.daysUntil <= 0
+                          ? `Vencido`
+                          : `D-${item.daysUntil}`}
+                      </span>
+                    )}
+                  </Link>
                 ))}
               </div>
             )}

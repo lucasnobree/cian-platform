@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, use } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -158,7 +158,8 @@ export default function ClienteDetailPage({
   const [deleting, setDeleting] = useState(false);
   const [stageUpdating, setStageUpdating] = useState(false);
   const [trelloCreating, setTrelloCreating] = useState(false);
-  const [activeTab, setActiveTab] = useState("info");
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "info");
 
   const fetchClient = useCallback(async () => {
     setLoading(true);
