@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 export default function LoginPage() {
@@ -31,6 +30,11 @@ export default function LoginPage() {
     }
   }
 
+  const inputClasses =
+    "flex h-10 w-full rounded-lg px-3 py-2 text-sm transition-colors outline-none " +
+    "bg-white/10 border border-white/20 text-white placeholder:text-white/30 " +
+    "focus:border-cian-400 focus:ring-2 focus:ring-cian-400/20";
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-cian-800 via-cian-900 to-cian-950 relative overflow-hidden">
       {/* Wave decoration */}
@@ -55,24 +59,24 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-medium text-white/60 mb-1.5">Usuário</label>
-              <Input
+              <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="seu.usuario"
                 required
-                className="bg-white/10! border-white/20! text-white! placeholder:text-white/30! focus:border-cian-400! focus:ring-cian-400/20!"
+                className={inputClasses}
               />
             </div>
             <div>
               <label className="block text-xs font-medium text-white/60 mb-1.5">Senha</label>
-              <Input
+              <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                className="bg-white/10! border-white/20! text-white! placeholder:text-white/30! focus:border-cian-400! focus:ring-cian-400/20!"
+                className={inputClasses}
               />
             </div>
 
