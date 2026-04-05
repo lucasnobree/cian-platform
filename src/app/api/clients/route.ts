@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { clientCreateSchema } from "@/lib/validators/client";
 import { logAudit } from "@/lib/services/audit";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 export async function GET(request: NextRequest) {
   try {
+    // Defense-in-depth: verify session even though middleware checks auth
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
     const stage = searchParams.get("stage") || "";
@@ -39,6 +48,16 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Defense-in-depth: verify session
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Rate limit: 20 creates per minute per IP
+    const limited = applyRateLimit(request, { maxRequests: 20, windowMs: 60_000 }, "clients:create");
+    if (limited) return limited;
+
     const body = await request.json();
     const parsed = clientCreateSchema.safeParse(body);
 
@@ -54,7 +73,8 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    logAudit({ action: "create", entity: "client", entityId: client.id });
+    const userId = (session.user as unknown as { id: string }).id;
+    logAudit({ action: "create", entity: "client", entityId: client.id, userId });
 
     return NextResponse.json(client, { status: 201 });
   } catch (error) {

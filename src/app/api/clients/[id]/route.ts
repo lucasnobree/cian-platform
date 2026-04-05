@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { clientUpdateSchema } from "@/lib/validators/client";
 import { logAudit } from "@/lib/services/audit";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await params;
     const client = await prisma.client.findUnique({
       where: { id },
@@ -23,6 +30,11 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await params;
     const body = await req.json();
     const parsed = clientUpdateSchema.safeParse(body);
@@ -34,7 +46,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if (parsed.data.weddingDate) data.weddingDate = new Date(parsed.data.weddingDate);
 
     const client = await prisma.client.update({ where: { id }, data });
-    logAudit({ action: "update", entity: "client", entityId: id });
+    const userId = (session.user as unknown as { id: string }).id;
+    logAudit({ action: "update", entity: "client", entityId: id, userId });
     return NextResponse.json(client);
   } catch (error) {
     console.error("[PUT /api/clients/[id]]", error);
@@ -44,9 +57,15 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await params;
     await prisma.client.delete({ where: { id } });
-    logAudit({ action: "delete", entity: "client", entityId: id });
+    const userId = (session.user as unknown as { id: string }).id;
+    logAudit({ action: "delete", entity: "client", entityId: id, userId });
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("[DELETE /api/clients/[id]]", error);

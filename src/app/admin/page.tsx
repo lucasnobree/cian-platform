@@ -1,16 +1,191 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LayoutDashboard, CalendarHeart, CreditCard, TrendingUp, Clock, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  LayoutDashboard,
+  CalendarHeart,
+  CreditCard,
+  TrendingUp,
+  Clock,
+  Users,
+  Plus,
+  Globe,
+} from "lucide-react";
+
+interface DashboardData {
+  activeWeddings: number;
+  nextWedding: {
+    id: string;
+    brideFullName: string;
+    groomFullName: string;
+    weddingDate: string;
+    daysUntil: number;
+  } | null;
+  pendingPayments: {
+    count: number;
+    total: number;
+  };
+  monthRevenue: number;
+  recentClients: {
+    id: string;
+    brideFullName: string;
+    groomFullName: string;
+    pipelineStage: string;
+    weddingDate: string;
+  }[];
+  upcomingDeadlines: {
+    id: string;
+    brideFullName: string;
+    groomFullName: string;
+    weddingDate: string;
+    daysUntil: number;
+  }[];
+  pipelineCounts: Record<string, number>;
+}
+
+const pipelineStageLabels: Record<string, string> = {
+  lead: "Lead",
+  contacted: "Contatado",
+  proposal_sent: "Proposta",
+  contract_signed: "Contrato",
+  in_production: "Produção",
+  delivered: "Entregue",
+  completed: "Concluído",
+};
+
+const pipelineStageColors: Record<string, string> = {
+  lead: "bg-slate-400",
+  contacted: "bg-sky-400",
+  proposal_sent: "bg-amber-400",
+  contract_signed: "bg-cian-500",
+  in_production: "bg-violet-500",
+  delivered: "bg-lime-500",
+  completed: "bg-emerald-500",
+};
+
+function formatCurrency(value: number): string {
+  return value.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    minimumFractionDigits: 2,
+  });
+}
+
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-8">
+      <div>
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-4 w-72 mt-2" />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i}>
+            <CardContent className="p-5">
+              <Skeleton className="h-16 w-full" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {[...Array(2)].map((_, i) => (
+          <Card key={i}>
+            <CardHeader>
+              <Skeleton className="h-5 w-40" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {[...Array(4)].map((_, j) => (
+                  <Skeleton key={j} className="h-12 w-full" />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function DashboardPage() {
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const res = await fetch("/api/dashboard/stats");
+        if (!res.ok) throw new Error("Erro ao carregar dados");
+        const json = await res.json();
+        setData(json);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Erro desconhecido");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  if (loading) return <DashboardSkeleton />;
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <p className="text-sand-500 text-sm mb-4">{error}</p>
+        <Button onClick={() => window.location.reload()}>Tentar novamente</Button>
+      </div>
+    );
+  }
+
+  if (!data) return null;
+
+  const totalPipeline = Object.values(data.pipelineCounts).reduce((a, b) => a + b, 0);
+
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-sand-800" style={{ fontFamily: "var(--font-display)" }}>
-          Bem-vinda ao CIAN
-        </h1>
-        <p className="text-sand-500 text-sm mt-1">Visão geral dos seus casamentos e finanças</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1
+            className="text-2xl font-bold text-sand-800"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            Bem-vinda ao CIAN
+          </h1>
+          <p className="text-sand-500 text-sm mt-1">
+            Visão geral dos seus casamentos e finanças
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Link href="/admin/clientes/novo">
+            <Button size="sm">
+              <Plus size={16} strokeWidth={1.5} />
+              Novo Cliente
+            </Button>
+          </Link>
+          <Link href="/admin/sites/novo">
+            <Button variant="secondary" size="sm">
+              <Globe size={16} strokeWidth={1.5} />
+              Novo Site
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Stat Cards */}
@@ -19,8 +194,12 @@ export default function DashboardPage() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-sand-500 uppercase tracking-wide">Casamentos Ativos</p>
-                <p className="text-2xl font-bold text-sand-800 mt-1">12</p>
+                <p className="text-xs font-medium text-sand-500 uppercase tracking-wide">
+                  Casamentos Ativos
+                </p>
+                <p className="text-2xl font-bold text-sand-800 mt-1">
+                  {data.activeWeddings}
+                </p>
               </div>
               <div className="w-10 h-10 rounded-lg bg-cian-50 flex items-center justify-center">
                 <LayoutDashboard size={20} className="text-cian-600" strokeWidth={1.5} />
@@ -33,9 +212,22 @@ export default function DashboardPage() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-sand-500 uppercase tracking-wide">Próximo Casamento</p>
-                <p className="text-lg font-bold text-sand-800 mt-1">Carol & Éder</p>
-                <p className="text-xs text-amber-600 font-medium">45 dias</p>
+                <p className="text-xs font-medium text-sand-500 uppercase tracking-wide">
+                  Próximo Casamento
+                </p>
+                {data.nextWedding ? (
+                  <>
+                    <p className="text-lg font-bold text-sand-800 mt-1">
+                      {data.nextWedding.brideFullName.split(" ")[0]} &{" "}
+                      {data.nextWedding.groomFullName.split(" ")[0]}
+                    </p>
+                    <p className="text-xs text-amber-600 font-medium">
+                      {data.nextWedding.daysUntil} dias
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm text-sand-400 mt-1">Nenhum agendado</p>
+                )}
               </div>
               <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center">
                 <CalendarHeart size={20} className="text-amber-500" strokeWidth={1.5} />
@@ -48,9 +240,15 @@ export default function DashboardPage() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-sand-500 uppercase tracking-wide">Pagamentos Pendentes</p>
-                <p className="text-2xl font-bold text-sand-800 mt-1">3</p>
-                <p className="text-xs text-sand-500">R$ 4.500,00</p>
+                <p className="text-xs font-medium text-sand-500 uppercase tracking-wide">
+                  Pagamentos Pendentes
+                </p>
+                <p className="text-2xl font-bold text-sand-800 mt-1">
+                  {data.pendingPayments.count}
+                </p>
+                <p className="text-xs text-sand-500">
+                  {formatCurrency(data.pendingPayments.total)}
+                </p>
               </div>
               <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center">
                 <CreditCard size={20} className="text-amber-500" strokeWidth={1.5} />
@@ -63,8 +261,12 @@ export default function DashboardPage() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-sand-500 uppercase tracking-wide">Recebido este Mês</p>
-                <p className="text-2xl font-bold text-emerald-600 mt-1">R$ 12.350</p>
+                <p className="text-xs font-medium text-sand-500 uppercase tracking-wide">
+                  Recebido este Mês
+                </p>
+                <p className="text-2xl font-bold text-emerald-600 mt-1">
+                  {formatCurrency(data.monthRevenue)}
+                </p>
               </div>
               <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
                 <TrendingUp size={20} className="text-emerald-500" strokeWidth={1.5} />
@@ -85,24 +287,39 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {[
-                { couple: "Carol & Éder", task: "Aprovação final do convite", days: 12 },
-                { couple: "Marina & Rafael", task: "Envio das artes p/ gráfica", days: 18 },
-                { couple: "Júlia & Pedro", task: "Entrega do moodboard", days: 25 },
-                { couple: "Ana & Lucas", task: "Revisão da identidade visual", days: 32 },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between py-2 border-b border-sand-100 last:border-0">
-                  <div>
-                    <p className="text-sm font-medium text-sand-700">{item.couple}</p>
-                    <p className="text-xs text-sand-400">{item.task}</p>
+            {data.upcomingDeadlines.length === 0 ? (
+              <p className="text-sm text-sand-400 text-center py-4">
+                Nenhum prazo próximo
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {data.upcomingDeadlines.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between py-2 border-b border-sand-100 last:border-0"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-sand-700">
+                        {item.brideFullName.split(" ")[0]} &{" "}
+                        {item.groomFullName.split(" ")[0]}
+                      </p>
+                      <p className="text-xs text-sand-400">
+                        {formatDate(item.weddingDate)}
+                      </p>
+                    </div>
+                    <span
+                      className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                        item.daysUntil <= 15
+                          ? "bg-amber-100 text-amber-700"
+                          : "bg-sand-100 text-sand-500"
+                      }`}
+                    >
+                      D-{item.daysUntil}
+                    </span>
                   </div>
-                  <span className={`text-xs font-semibold px-2 py-1 rounded-full ${item.days <= 15 ? "bg-amber-100 text-amber-700" : "bg-sand-100 text-sand-500"}`}>
-                    D-{item.days}
-                  </span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -115,25 +332,79 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {[
-                { couple: "Fernanda & Thiago", stage: "in_production", date: "15/08/2026" },
-                { couple: "Carol & Éder", stage: "contract_signed", date: "22/09/2026" },
-                { couple: "Beatriz & Gustavo", stage: "proposal_sent", date: "10/11/2026" },
-                { couple: "Camila & André", stage: "lead", date: "05/12/2026" },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between py-2 border-b border-sand-100 last:border-0">
-                  <div>
-                    <p className="text-sm font-medium text-sand-700">{item.couple}</p>
-                    <p className="text-xs text-sand-400">{item.date}</p>
+            {data.recentClients.length === 0 ? (
+              <p className="text-sm text-sand-400 text-center py-4">
+                Nenhum cliente cadastrado
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {data.recentClients.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between py-2 border-b border-sand-100 last:border-0"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-sand-700">
+                        {item.brideFullName.split(" ")[0]} &{" "}
+                        {item.groomFullName.split(" ")[0]}
+                      </p>
+                      <p className="text-xs text-sand-400">
+                        {formatDate(item.weddingDate)}
+                      </p>
+                    </div>
+                    <Badge stage={item.pipelineStage} />
                   </div>
-                  <Badge stage={item.stage} />
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
+
+      {/* Pipeline Bar */}
+      {totalPipeline > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <LayoutDashboard size={16} className="text-cian-600" strokeWidth={1.5} />
+              Pipeline
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex h-3 rounded-full overflow-hidden bg-sand-100">
+              {Object.entries(pipelineStageLabels).map(([stage]) => {
+                const count = data.pipelineCounts[stage] || 0;
+                if (count === 0) return null;
+                const pct = (count / totalPipeline) * 100;
+                return (
+                  <div
+                    key={stage}
+                    className={`${pipelineStageColors[stage] || "bg-sand-300"} transition-all`}
+                    style={{ width: `${pct}%` }}
+                    title={`${pipelineStageLabels[stage]}: ${count}`}
+                  />
+                );
+              })}
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3">
+              {Object.entries(pipelineStageLabels).map(([stage, label]) => {
+                const count = data.pipelineCounts[stage] || 0;
+                if (count === 0) return null;
+                return (
+                  <div key={stage} className="flex items-center gap-1.5 text-xs text-sand-600">
+                    <div
+                      className={`w-2.5 h-2.5 rounded-full ${
+                        pipelineStageColors[stage] || "bg-sand-300"
+                      }`}
+                    />
+                    {label}: {count}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
