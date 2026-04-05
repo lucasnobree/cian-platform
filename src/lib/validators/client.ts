@@ -76,6 +76,9 @@ export const clientCreateSchema = z.object({
     .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Slug deve conter apenas letras minúsculas, números e hífens")
     .refine((val) => !RESERVED_SLUGS.includes(val), "Slug reservado pelo sistema")
     .optional(),
+  customDomain: z.string().max(253)
+    .regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/, "Domínio inválido")
+    .optional(),
   notes: z.string().max(5000).transform(sanitizeText).optional(),
 });
 

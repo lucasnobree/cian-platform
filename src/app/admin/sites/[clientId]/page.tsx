@@ -73,6 +73,7 @@ interface ClientData {
   weddingDate: string;
   websiteSlug: string | null;
   websiteStatus: string;
+  customDomain: string | null;
 }
 
 // ────────────────── Constants ──────────────────
@@ -629,6 +630,41 @@ export default function SiteEditorPage() {
             rows={3}
           />
         </Field>
+      </Section>
+
+      {/* Custom Domain */}
+      <Section title="Domínio Próprio" icon={Globe}>
+        <Field label="Domínio personalizado">
+          <Input
+            value={client?.customDomain || ""}
+            onChange={(e) => {
+              if (client) {
+                setClient({ ...client, customDomain: e.target.value || null });
+              }
+            }}
+            onBlur={async () => {
+              if (!client) return;
+              try {
+                await fetch(`/api/clients/${client.id}`, {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ customDomain: client.customDomain || undefined }),
+                });
+              } catch { /* ignore */ }
+            }}
+            placeholder="carolaeder.com.br"
+          />
+        </Field>
+        <p className="text-xs text-sand-400 mt-2">
+          Após configurar aqui, o domínio precisa ser adicionado no painel da Vercel
+          e o DNS do domínio deve apontar para <code className="bg-sand-100 px-1 rounded">cname.vercel-dns.com</code>
+        </p>
+        {client?.customDomain && (
+          <div className="mt-2 flex items-center gap-2 text-xs text-cian-600">
+            <Globe size={14} strokeWidth={1.5} />
+            <span>https://{client.customDomain}</span>
+          </div>
+        )}
       </Section>
     </div>
   );
