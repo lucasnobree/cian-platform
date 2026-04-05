@@ -122,6 +122,19 @@ export default function ClientesPage() {
   const handleDragStart = (e: React.DragEvent, clientId: string) => {
     e.dataTransfer.setData("clientId", clientId);
     e.dataTransfer.effectAllowed = "move";
+
+    // Use the card element itself as the drag ghost
+    const target = e.currentTarget as HTMLElement;
+    const clone = target.cloneNode(true) as HTMLElement;
+    clone.style.width = `${target.offsetWidth}px`;
+    clone.style.opacity = "0.9";
+    clone.style.transform = "rotate(2deg)";
+    clone.style.boxShadow = "0 8px 24px rgba(0,0,0,0.15)";
+    clone.style.position = "absolute";
+    clone.style.top = "-9999px";
+    document.body.appendChild(clone);
+    e.dataTransfer.setDragImage(clone, target.offsetWidth / 2, 30);
+    requestAnimationFrame(() => clone.remove());
   };
 
   const handleDrop = async (e: React.DragEvent, stage: string) => {
