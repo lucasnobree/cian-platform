@@ -61,7 +61,7 @@ export default function LoginPage() {
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="seu.usuario"
                 required
-                className="bg-white/10 border-white/20 text-white placeholder:text-white/30 focus:border-cian-400 focus:ring-cian-400/20"
+                className="bg-white/10! border-white/20! text-white! placeholder:text-white/30! focus:border-cian-400! focus:ring-cian-400/20!"
               />
             </div>
             <div>
@@ -72,7 +72,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                className="bg-white/10 border-white/20 text-white placeholder:text-white/30 focus:border-cian-400 focus:ring-cian-400/20"
+                className="bg-white/10! border-white/20! text-white! placeholder:text-white/30! focus:border-cian-400! focus:ring-cian-400/20!"
               />
             </div>
 
