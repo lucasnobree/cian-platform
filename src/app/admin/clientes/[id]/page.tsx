@@ -82,9 +82,9 @@ const PIPELINE_STAGES = [
   { value: "contacted", label: "Contatado" },
   { value: "proposal_sent", label: "Proposta Enviada" },
   { value: "contract_signed", label: "Contrato Assinado" },
-  { value: "in_production", label: "Em Producao" },
+  { value: "in_production", label: "Em Produção" },
   { value: "delivered", label: "Entregue" },
-  { value: "completed", label: "Concluido" },
+  { value: "completed", label: "Concluído" },
 ];
 
 const CEREMONY_LABELS: Record<string, string> = {
@@ -95,7 +95,7 @@ const CEREMONY_LABELS: Record<string, string> = {
 
 const LEAD_SOURCE_LABELS: Record<string, string> = {
   instagram: "Instagram",
-  indicacao: "Indicacao",
+  indicacao: "Indicação",
   google: "Google",
   feira: "Feira",
   outro: "Outro",
@@ -159,7 +159,7 @@ export default function ClienteDetailPage({
     try {
       const res = await fetch(`/api/clients/${id}`);
       if (!res.ok) {
-        if (res.status === 404) throw new Error("Cliente nao encontrado");
+        if (res.status === 404) throw new Error("Cliente não encontrado");
         throw new Error("Erro ao carregar cliente");
       }
       const data = await res.json();
@@ -238,7 +238,7 @@ export default function ClienteDetailPage({
   if (error || !client) {
     return (
       <div className="max-w-2xl mx-auto py-12 text-center">
-        <p className="text-sand-500 mb-4">{error || "Cliente nao encontrado"}</p>
+        <p className="text-sand-500 mb-4">{error || "Cliente não encontrado"}</p>
         <Link href="/admin/clientes">
           <Button variant="secondary">
             <ArrowLeft size={18} strokeWidth={1.5} />
@@ -250,9 +250,9 @@ export default function ClienteDetailPage({
   }
 
   const tabs = [
-    { key: "info", label: "Informacoes" },
+    { key: "info", label: "Informações" },
     { key: "docs", label: `Documentos${client._count?.documents ? ` (${client._count.documents})` : ""}` },
-    { key: "interactions", label: `Interacoes${client._count?.interactions ? ` (${client._count.interactions})` : ""}` },
+    { key: "interactions", label: `Interações${client._count?.interactions ? ` (${client._count.interactions})` : ""}` },
     { key: "payments", label: "Pagamentos" },
     { key: "site", label: "Site" },
   ];
@@ -444,7 +444,7 @@ export default function ClienteDetailPage({
                 />
                 <InfoRow
                   icon={Church}
-                  label="Cerimonia"
+                  label="Cerimônia"
                   value={
                     client.ceremonyType
                       ? CEREMONY_LABELS[client.ceremonyType] || client.ceremonyType
@@ -453,12 +453,12 @@ export default function ClienteDetailPage({
                 />
                 <InfoRow
                   icon={Church}
-                  label="Local da cerimonia"
+                  label="Local da cerimônia"
                   value={client.ceremonyVenue}
                 />
                 <InfoRow
                   icon={PartyPopper}
-                  label="Local da recepcao"
+                  label="Local da recepção"
                   value={client.receptionVenue}
                 />
                 <InfoRow
@@ -561,7 +561,7 @@ export default function ClienteDetailPage({
             <Card className="md:col-span-2">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold text-sand-600">
-                  Observacoes
+                  Observações
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -591,7 +591,7 @@ export default function ClienteDetailPage({
             className="text-sand-300 mb-4"
           />
           <p className="text-sm text-sand-500">
-            Historico de interacoes em breve
+            Histórico de interações em breve
           </p>
         </Card>
       )}
@@ -611,7 +611,7 @@ export default function ClienteDetailPage({
         <Card className="flex flex-col items-center justify-center py-16">
           <Globe size={48} strokeWidth={1} className="text-sand-300 mb-4" />
           <p className="text-sm text-sand-500">
-            Configuracao do site em breve
+            Configuração do site em breve
           </p>
           {client.websiteSlug && (
             <p className="text-xs text-sand-400 mt-2">
@@ -629,7 +629,7 @@ export default function ClienteDetailPage({
           <strong>
             {client.brideFullName} & {client.groomFullName}
           </strong>
-          ? Esta acao nao pode ser desfeita.
+          ? Esta ação não pode ser desfeita.
         </DialogDescription>
         <DialogFooter>
           <Button

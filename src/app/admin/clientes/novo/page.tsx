@@ -34,7 +34,7 @@ const CEREMONY_TYPES = [
 const LEAD_SOURCES = [
   { value: "", label: "Selecione..." },
   { value: "instagram", label: "Instagram" },
-  { value: "indicacao", label: "Indicacao" },
+  { value: "indicacao", label: "Indicação" },
   { value: "google", label: "Google" },
   { value: "feira", label: "Feira" },
   { value: "outro", label: "Outro" },
@@ -45,9 +45,9 @@ const PIPELINE_STAGES = [
   { value: "contacted", label: "Contatado" },
   { value: "proposal_sent", label: "Proposta Enviada" },
   { value: "contract_signed", label: "Contrato Assinado" },
-  { value: "in_production", label: "Em Producao" },
+  { value: "in_production", label: "Em Produção" },
   { value: "delivered", label: "Entregue" },
-  { value: "completed", label: "Concluido" },
+  { value: "completed", label: "Concluído" },
 ];
 
 const BRAZILIAN_STATES = [
@@ -170,31 +170,31 @@ export default function NovoClientePage() {
     if (!form.groomFullName.trim() || form.groomFullName.trim().length < 2)
       errs.groomFullName = "Nome do noivo deve ter pelo menos 2 caracteres";
     if (!form.brideEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.brideEmail))
-      errs.brideEmail = "E-mail da noiva invalido";
+      errs.brideEmail = "E-mail da noiva inválido";
     if (!form.bridePhone.trim() || form.bridePhone.replace(/\D/g, "").length < 10)
-      errs.bridePhone = "Telefone da noiva invalido (min. 10 digitos)";
-    if (!form.weddingDate) errs.weddingDate = "Data do casamento obrigatoria";
+      errs.bridePhone = "Telefone da noiva inválido (min. 10 dígitos)";
+    if (!form.weddingDate) errs.weddingDate = "Data do casamento obrigatória";
 
     if (form.groomEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.groomEmail))
-      errs.groomEmail = "E-mail do noivo invalido";
+      errs.groomEmail = "E-mail do noivo inválido";
 
     if (form.brideCpf) {
       const cleaned = form.brideCpf.replace(/\D/g, "");
-      if (cleaned.length !== 11) errs.brideCpf = "CPF deve ter 11 digitos";
+      if (cleaned.length !== 11) errs.brideCpf = "CPF deve ter 11 dígitos";
     }
     if (form.groomCpf) {
       const cleaned = form.groomCpf.replace(/\D/g, "");
-      if (cleaned.length !== 11) errs.groomCpf = "CPF deve ter 11 digitos";
+      if (cleaned.length !== 11) errs.groomCpf = "CPF deve ter 11 dígitos";
     }
 
     if (form.websiteSlug && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(form.websiteSlug))
-      errs.websiteSlug = "Slug deve conter apenas letras minusculas, numeros e hifens";
+      errs.websiteSlug = "Slug deve conter apenas letras minúsculas, números e hífens";
 
     if (form.contractValue && (isNaN(Number(form.contractValue)) || Number(form.contractValue) < 0))
-      errs.contractValue = "Valor invalido";
+      errs.contractValue = "Valor inválido";
 
     if (form.estimatedGuests && (isNaN(Number(form.estimatedGuests)) || Number(form.estimatedGuests) < 1))
-      errs.estimatedGuests = "Numero de convidados invalido";
+      errs.estimatedGuests = "Número de convidados inválido";
 
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -391,7 +391,7 @@ export default function NovoClientePage() {
                 onChange={(e) => set("weddingDate", e.target.value)}
               />
             </Field>
-            <Field label="Tipo de cerimonia">
+            <Field label="Tipo de cerimônia">
               <Select
                 value={form.ceremonyType}
                 onChange={(e) => set("ceremonyType", e.target.value)}
@@ -403,14 +403,14 @@ export default function NovoClientePage() {
                 ))}
               </Select>
             </Field>
-            <Field label="Local da cerimonia">
+            <Field label="Local da cerimônia">
               <Input
                 value={form.ceremonyVenue}
                 onChange={(e) => set("ceremonyVenue", e.target.value)}
                 placeholder="Igreja, cartorio, etc."
               />
             </Field>
-            <Field label="Local da recepcao">
+            <Field label="Local da recepção">
               <Input
                 value={form.receptionVenue}
                 onChange={(e) => set("receptionVenue", e.target.value)}
@@ -488,7 +488,7 @@ export default function NovoClientePage() {
                 ))}
               </Select>
             </Field>
-            <Field label="Pacote de servico">
+            <Field label="Pacote de serviço">
               <Input
                 value={form.servicePackage}
                 onChange={(e) => set("servicePackage", e.target.value)}
@@ -529,7 +529,7 @@ export default function NovoClientePage() {
               </Field>
             </div>
             <div className="sm:col-span-2">
-              <Field label="Observacoes">
+              <Field label="Observações">
                 <Textarea
                   value={form.notes}
                   onChange={(e) => set("notes", e.target.value)}

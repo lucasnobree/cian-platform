@@ -15,7 +15,6 @@ import {
   Users,
   MoreHorizontal,
   Eye,
-  Pencil,
   Trash2,
   GripVertical,
 } from "lucide-react";
@@ -320,7 +319,7 @@ export default function ClientesPage() {
                       Cidade
                     </th>
                     <th className="text-right font-medium text-sand-500 px-4 py-3">
-                      Acoes
+                      Ações
                     </th>
                   </tr>
                 </thead>
@@ -416,7 +415,7 @@ export default function ClientesPage() {
                   disabled={page >= totalPages}
                   onClick={() => setPage((p) => p + 1)}
                 >
-                  Proximo
+                  Próximo
                   <ChevronRight size={16} strokeWidth={1.5} />
                 </Button>
               </div>

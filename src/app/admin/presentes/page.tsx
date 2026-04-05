@@ -113,10 +113,10 @@ export default function PresentesPage() {
         <AlertTriangle size={20} className="mt-0.5 shrink-0 text-amber-600" strokeWidth={1.5} />
         <div>
           <p className="text-sm font-semibold text-amber-800">
-            Modulo em desenvolvimento
+            Módulo em desenvolvimento
           </p>
           <p className="text-sm text-amber-700 mt-0.5">
-            Os dados abaixo sao ilustrativos. A integracao com pagamento PIX sera ativada em breve.
+            Os dados abaixo são ilustrativos. A integração com pagamento PIX será ativada em breve.
           </p>
         </div>
       </div>
