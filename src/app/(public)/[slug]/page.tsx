@@ -1,0 +1,637 @@
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import { Countdown } from "@/components/public/countdown";
+import { RsvpForm } from "@/components/public/rsvp-form";
+import {
+  MapPin,
+  Clock,
+  Heart,
+  Gift,
+  Camera,
+  CalendarHeart,
+  Shirt,
+  Lightbulb,
+  ChevronDown,
+} from "lucide-react";
+
+// ────────────────── Types ──────────────────
+
+interface ScheduleItem {
+  time: string;
+  event: string;
+  location?: string;
+}
+
+interface TipItem {
+  title: string;
+  text: string;
+}
+
+interface PageProps {
+  params: Promise<{ slug: string }>;
+}
+
+// ────────────────── Data Fetching ──────────────────
+
+async function getWeddingData(slug: string) {
+  const client = await prisma.client.findFirst({
+    where: {
+      websiteSlug: slug,
+      websiteStatus: "published",
+    },
+    include: {
+      websiteConfig: true,
+    },
+  });
+
+  return client;
+}
+
+// ────────────────── Metadata ──────────────────
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const client = await getWeddingData(slug);
+
+  if (!client || !client.websiteConfig) {
+    return { title: "Casamento" };
+  }
+
+  const cfg = client.websiteConfig;
+  const defaultTitle = `${client.brideFullName.split(" ")[0]} & ${client.groomFullName.split(" ")[0]}`;
+
+  return {
+    title: cfg.metaTitle || defaultTitle,
+    description:
+      cfg.metaDescription ||
+      `Casamento de ${client.brideFullName} e ${client.groomFullName}`,
+    openGraph: {
+      title: cfg.metaTitle || defaultTitle,
+      description:
+        cfg.metaDescription ||
+        `Casamento de ${client.brideFullName} e ${client.groomFullName}`,
+      type: "website",
+      ...(cfg.heroImageUrl ? { images: [{ url: cfg.heroImageUrl }] } : {}),
+    },
+  };
+}
+
+// ────────────────── Section Wrapper ──────────────────
+
+function WeddingSection({
+  children,
+  id,
+  className = "",
+}: {
+  children: React.ReactNode;
+  id: string;
+  className?: string;
+}) {
+  return (
+    <section id={id} className={`px-6 py-16 sm:py-20 md:py-24 ${className}`}>
+      <div className="max-w-3xl mx-auto">{children}</div>
+    </section>
+  );
+}
+
+function Divider() {
+  return (
+    <div className="flex items-center justify-center gap-3 py-2">
+      <div
+        className="h-px w-12 sm:w-20"
+        style={{ backgroundColor: "var(--wedding-accent)", opacity: 0.4 }}
+      />
+      <Heart
+        size={14}
+        style={{ color: "var(--wedding-accent)", opacity: 0.5 }}
+        fill="currentColor"
+      />
+      <div
+        className="h-px w-12 sm:w-20"
+        style={{ backgroundColor: "var(--wedding-accent)", opacity: 0.4 }}
+      />
+    </div>
+  );
+}
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <h2
+      className="text-3xl sm:text-4xl text-center mb-2"
+      style={{
+        fontFamily: "var(--wedding-font-heading)",
+        color: "var(--wedding-primary)",
+      }}
+    >
+      {children}
+    </h2>
+  );
+}
+
+// ────────────────── Main Page ──────────────────
+
+export default async function WeddingPage({ params }: PageProps) {
+  const { slug } = await params;
+  const client = await getWeddingData(slug);
+
+  if (!client || !client.websiteConfig) {
+    return <NotFoundPage />;
+  }
+
+  const cfg = client.websiteConfig;
+  const brideName = client.brideFullName.split(" ")[0];
+  const groomName = client.groomFullName.split(" ")[0];
+
+  // Parse JSON fields
+  const schedule: ScheduleItem[] = Array.isArray(cfg.schedule) ? (cfg.schedule as unknown as ScheduleItem[]) : [];
+  const tips: TipItem[] = Array.isArray(cfg.tips) ? (cfg.tips as unknown as TipItem[]) : [];
+  const galleryImages: string[] = cfg.galleryImages || [];
+
+  // Build Google Fonts URL
+  const fontsUrl = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(cfg.fontHeading)}&family=${encodeURIComponent(cfg.fontBody)}:wght@400;600&display=swap`;
+
+  return (
+    <>
+      {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+      <link href={fontsUrl} rel="stylesheet" />
+      <div
+        style={
+          {
+            "--wedding-primary": cfg.primaryColor,
+            "--wedding-secondary": cfg.secondaryColor,
+            "--wedding-accent": cfg.accentColor,
+            "--wedding-bg": cfg.backgroundColor,
+            "--wedding-text": cfg.textColor,
+            "--wedding-font-heading": `'${cfg.fontHeading}', cursive`,
+            "--wedding-font-body": `'${cfg.fontBody}', serif`,
+            backgroundColor: cfg.backgroundColor,
+            color: cfg.textColor,
+            fontFamily: `'${cfg.fontBody}', serif`,
+          } as React.CSSProperties
+        }
+        className="min-h-screen"
+      >
+        {/* ═══════ HERO ═══════ */}
+        <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+          {/* Background */}
+          {cfg.heroImageUrl ? (
+            <div
+              className="absolute inset-0 bg-cover bg-center"
+              style={{
+                backgroundImage: `url(${cfg.heroImageUrl})`,
+              }}
+            >
+              <div className="absolute inset-0 bg-black/40" />
+            </div>
+          ) : (
+            <div
+              className="absolute inset-0"
+              style={{
+                background: `linear-gradient(135deg, ${cfg.primaryColor}22 0%, ${cfg.backgroundColor} 50%, ${cfg.accentColor}22 100%)`,
+              }}
+            />
+          )}
+
+          {/* Content */}
+          <div className="relative z-10 text-center px-6 py-20">
+            {cfg.monogram && (
+              <p
+                className="text-sm sm:text-base tracking-[0.3em] uppercase mb-6 opacity-80"
+                style={{
+                  fontFamily: `'${cfg.fontBody}', serif`,
+                  color: cfg.heroImageUrl ? "#fff" : cfg.textColor,
+                }}
+              >
+                {cfg.monogram}
+              </p>
+            )}
+
+            <h1
+              className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl mb-6"
+              style={{
+                fontFamily: `'${cfg.fontHeading}', cursive`,
+                color: cfg.heroImageUrl ? "#fff" : cfg.primaryColor,
+                lineHeight: 1.1,
+              }}
+            >
+              {cfg.heroTitle || `${brideName} & ${groomName}`}
+            </h1>
+
+            {(cfg.heroDate || client.weddingDate) && (
+              <p
+                className="text-base sm:text-lg tracking-[0.15em] mb-3 opacity-90"
+                style={{
+                  fontFamily: `'${cfg.fontBody}', serif`,
+                  color: cfg.heroImageUrl ? "#fff" : cfg.textColor,
+                }}
+              >
+                {cfg.heroDate ||
+                  new Date(client.weddingDate).toLocaleDateString("pt-BR", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })}
+              </p>
+            )}
+
+            {cfg.heroLocation && (
+              <p
+                className="text-sm sm:text-base opacity-70 flex items-center justify-center gap-2"
+                style={{
+                  fontFamily: `'${cfg.fontBody}', serif`,
+                  color: cfg.heroImageUrl ? "#fff" : cfg.textColor,
+                }}
+              >
+                <MapPin size={14} />
+                {cfg.heroLocation}
+              </p>
+            )}
+
+            {/* Scroll hint */}
+            <div className="mt-16 animate-bounce opacity-50">
+              <ChevronDown
+                size={24}
+                style={{ color: cfg.heroImageUrl ? "#fff" : cfg.textColor }}
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* ═══════ COUNTDOWN ═══════ */}
+        {cfg.showCountdown && (
+          <WeddingSection id="countdown">
+            <Countdown weddingDate={client.weddingDate.toISOString()} />
+          </WeddingSection>
+        )}
+
+        {/* ═══════ WELCOME ═══════ */}
+        {cfg.showWelcome && (cfg.welcomeTitle || cfg.welcomeText) && (
+          <WeddingSection id="welcome">
+            <div className="text-center">
+              <SectionTitle>{cfg.welcomeTitle || "Bem-vindos"}</SectionTitle>
+              <Divider />
+
+              {cfg.couplePhotoUrl && (
+                <div className="my-8 flex justify-center">
+                  <div
+                    className="w-48 h-48 sm:w-56 sm:h-56 rounded-full overflow-hidden border-4 shadow-lg"
+                    style={{ borderColor: cfg.accentColor }}
+                  >
+                    <img
+                      src={cfg.couplePhotoUrl}
+                      alt={`${brideName} & ${groomName}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {cfg.welcomeText && (
+                <p
+                  className="text-base sm:text-lg leading-relaxed max-w-xl mx-auto opacity-80 whitespace-pre-line"
+                  style={{ fontFamily: "var(--wedding-font-body)" }}
+                >
+                  {cfg.welcomeText}
+                </p>
+              )}
+            </div>
+          </WeddingSection>
+        )}
+
+        {/* ═══════ EVENT ═══════ */}
+        {cfg.showEvent && (cfg.eventTitle || cfg.eventVenue) && (
+          <WeddingSection id="event">
+            <div className="text-center">
+              <SectionTitle>{cfg.eventTitle || "Cerimônia & Recepção"}</SectionTitle>
+              <Divider />
+
+              {cfg.eventText && (
+                <p
+                  className="text-base leading-relaxed max-w-xl mx-auto opacity-80 mb-8 whitespace-pre-line"
+                  style={{ fontFamily: "var(--wedding-font-body)" }}
+                >
+                  {cfg.eventText}
+                </p>
+              )}
+
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-12">
+                {cfg.eventVenue && (
+                  <div className="flex items-center gap-3">
+                    <MapPin size={20} style={{ color: "var(--wedding-accent)" }} />
+                    <span
+                      className="text-sm sm:text-base"
+                      style={{ fontFamily: "var(--wedding-font-body)" }}
+                    >
+                      {cfg.eventVenue}
+                    </span>
+                  </div>
+                )}
+                {cfg.eventTime && (
+                  <div className="flex items-center gap-3">
+                    <Clock size={20} style={{ color: "var(--wedding-accent)" }} />
+                    <span
+                      className="text-sm sm:text-base"
+                      style={{ fontFamily: "var(--wedding-font-body)" }}
+                    >
+                      {cfg.eventTime}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </WeddingSection>
+        )}
+
+        {/* ═══════ SCHEDULE ═══════ */}
+        {cfg.showSchedule && schedule.length > 0 && (
+          <WeddingSection id="schedule">
+            <div className="text-center mb-10">
+              <SectionTitle>Programação</SectionTitle>
+              <Divider />
+            </div>
+
+            <div className="relative max-w-md mx-auto">
+              {/* Timeline line */}
+              <div
+                className="absolute left-4 top-0 bottom-0 w-px"
+                style={{ backgroundColor: "var(--wedding-accent)", opacity: 0.3 }}
+              />
+
+              <div className="space-y-8">
+                {schedule.map((item, i) => (
+                  <div key={i} className="flex gap-5 pl-4">
+                    {/* Timeline dot */}
+                    <div className="relative flex-shrink-0">
+                      <div
+                        className="w-3 h-3 rounded-full -ml-1.5 mt-1.5"
+                        style={{ backgroundColor: "var(--wedding-accent)" }}
+                      />
+                    </div>
+                    <div>
+                      <p
+                        className="text-xs uppercase tracking-[0.15em] opacity-60 mb-0.5"
+                        style={{ fontFamily: "var(--wedding-font-body)" }}
+                      >
+                        {item.time}
+                      </p>
+                      <p
+                        className="text-base font-semibold"
+                        style={{ fontFamily: "var(--wedding-font-body)" }}
+                      >
+                        {item.event}
+                      </p>
+                      {item.location && (
+                        <p
+                          className="text-sm opacity-60 mt-0.5"
+                          style={{ fontFamily: "var(--wedding-font-body)" }}
+                        >
+                          {item.location}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </WeddingSection>
+        )}
+
+        {/* ═══════ DRESS CODE ═══════ */}
+        {cfg.showDressCode && (cfg.dressCodeWomen || cfg.dressCodeMen) && (
+          <WeddingSection id="dresscode">
+            <div className="text-center mb-10">
+              <SectionTitle>Dress Code</SectionTitle>
+              <Divider />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
+              {cfg.dressCodeWomen && (
+                <div
+                  className="rounded-xl p-6 text-center"
+                  style={{
+                    backgroundColor: `${cfg.secondaryColor}80`,
+                    border: `1px solid ${cfg.accentColor}40`,
+                  }}
+                >
+                  <Shirt
+                    size={24}
+                    className="mx-auto mb-3"
+                    style={{ color: "var(--wedding-accent)" }}
+                  />
+                  <h3
+                    className="text-lg mb-3"
+                    style={{
+                      fontFamily: "var(--wedding-font-heading)",
+                      color: "var(--wedding-primary)",
+                    }}
+                  >
+                    Feminino
+                  </h3>
+                  <p
+                    className="text-sm leading-relaxed opacity-80 whitespace-pre-line"
+                    style={{ fontFamily: "var(--wedding-font-body)" }}
+                  >
+                    {cfg.dressCodeWomen}
+                  </p>
+                </div>
+              )}
+              {cfg.dressCodeMen && (
+                <div
+                  className="rounded-xl p-6 text-center"
+                  style={{
+                    backgroundColor: `${cfg.secondaryColor}80`,
+                    border: `1px solid ${cfg.accentColor}40`,
+                  }}
+                >
+                  <Shirt
+                    size={24}
+                    className="mx-auto mb-3"
+                    style={{ color: "var(--wedding-accent)" }}
+                  />
+                  <h3
+                    className="text-lg mb-3"
+                    style={{
+                      fontFamily: "var(--wedding-font-heading)",
+                      color: "var(--wedding-primary)",
+                    }}
+                  >
+                    Masculino
+                  </h3>
+                  <p
+                    className="text-sm leading-relaxed opacity-80 whitespace-pre-line"
+                    style={{ fontFamily: "var(--wedding-font-body)" }}
+                  >
+                    {cfg.dressCodeMen}
+                  </p>
+                </div>
+              )}
+            </div>
+          </WeddingSection>
+        )}
+
+        {/* ═══════ GIFTS ═══════ */}
+        {cfg.showGifts && (
+          <WeddingSection id="gifts">
+            <div className="text-center">
+              <SectionTitle>Lista de Presentes</SectionTitle>
+              <Divider />
+              <p
+                className="text-base leading-relaxed max-w-xl mx-auto opacity-80 mt-6 mb-8"
+                style={{ fontFamily: "var(--wedding-font-body)" }}
+              >
+                Sua presença é o nosso maior presente. Mas se desejar nos presentear,
+                preparamos uma lista especial.
+              </p>
+              <a
+                href="#gifts"
+                className="inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90"
+                style={{
+                  backgroundColor: "var(--wedding-primary)",
+                  fontFamily: "var(--wedding-font-body)",
+                }}
+              >
+                <Gift size={16} />
+                Ver Lista de Presentes
+              </a>
+            </div>
+          </WeddingSection>
+        )}
+
+        {/* ═══════ RSVP ═══════ */}
+        {cfg.showRsvp && (
+          <WeddingSection id="rsvp">
+            <div className="text-center mb-10">
+              <SectionTitle>Confirme sua Presença</SectionTitle>
+              <Divider />
+              <p
+                className="text-base leading-relaxed max-w-xl mx-auto opacity-80 mt-4"
+                style={{ fontFamily: "var(--wedding-font-body)" }}
+              >
+                Será uma alegria contar com você neste dia especial!
+              </p>
+            </div>
+            <RsvpForm slug={slug} />
+          </WeddingSection>
+        )}
+
+        {/* ═══════ TIPS ═══════ */}
+        {cfg.showTips && tips.length > 0 && (
+          <WeddingSection id="tips">
+            <div className="text-center mb-10">
+              <SectionTitle>Dicas</SectionTitle>
+              <Divider />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
+              {tips.map((tip, i) => (
+                <div
+                  key={i}
+                  className="rounded-xl p-5"
+                  style={{
+                    backgroundColor: `${cfg.secondaryColor}60`,
+                    border: `1px solid ${cfg.accentColor}30`,
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <Lightbulb
+                      size={18}
+                      className="flex-shrink-0 mt-0.5"
+                      style={{ color: "var(--wedding-accent)" }}
+                    />
+                    <div>
+                      <h4
+                        className="text-sm font-semibold mb-1"
+                        style={{ fontFamily: "var(--wedding-font-body)" }}
+                      >
+                        {tip.title}
+                      </h4>
+                      <p
+                        className="text-sm opacity-70 leading-relaxed"
+                        style={{ fontFamily: "var(--wedding-font-body)" }}
+                      >
+                        {tip.text}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </WeddingSection>
+        )}
+
+        {/* ═══════ GALLERY ═══════ */}
+        {cfg.showGallery && galleryImages.length > 0 && (
+          <WeddingSection id="gallery">
+            <div className="text-center mb-10">
+              <SectionTitle>Galeria</SectionTitle>
+              <Divider />
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {galleryImages.map((url, i) => (
+                <div
+                  key={i}
+                  className="aspect-square rounded-lg overflow-hidden"
+                  style={{ border: `1px solid ${cfg.accentColor}20` }}
+                >
+                  <img
+                    src={url}
+                    alt={`Galeria ${i + 1}`}
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+              ))}
+            </div>
+          </WeddingSection>
+        )}
+
+        {/* ═══════ FOOTER ═══════ */}
+        <footer className="text-center py-12 px-6 opacity-50">
+          <p
+            className="text-xs tracking-[0.2em] uppercase"
+            style={{ fontFamily: "var(--wedding-font-body)" }}
+          >
+            {cfg.heroTitle || `${brideName} & ${groomName}`}
+          </p>
+          <p
+            className="text-[10px] mt-2 opacity-60"
+            style={{ fontFamily: "var(--wedding-font-body)" }}
+          >
+            Feito com amor por CIAN Art Studio
+          </p>
+        </footer>
+      </div>
+    </>
+  );
+}
+
+// ────────────────── 404 ──────────────────
+
+function NotFoundPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-50 via-white to-amber-50 px-6">
+      <div className="text-center max-w-md">
+        <div className="w-20 h-20 rounded-full bg-teal-100 flex items-center justify-center mx-auto mb-6">
+          <Heart size={32} className="text-teal-600" />
+        </div>
+        <h1
+          className="text-3xl font-bold text-teal-800 mb-3"
+          style={{ fontFamily: "serif" }}
+        >
+          Página não encontrada
+        </h1>
+        <p className="text-teal-600/70 text-sm leading-relaxed mb-6">
+          Este site de casamento não existe ou ainda não foi publicado.
+          Verifique o endereço e tente novamente.
+        </p>
+        <a
+          href="/"
+          className="inline-flex items-center gap-2 rounded-lg bg-teal-600 text-white px-5 py-2.5 text-sm font-medium hover:bg-teal-700 transition-colors"
+        >
+          Voltar ao início
+        </a>
+      </div>
+    </div>
+  );
+}
