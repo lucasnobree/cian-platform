@@ -25,8 +25,6 @@ const cspDirectives = [
   "base-uri 'self'",
   // Restrict form targets to same origin
   "form-action 'self'",
-  // Block all plugins
-  "plugin-types 'none'",
 ].join("; ");
 
 const nextConfig: NextConfig = {

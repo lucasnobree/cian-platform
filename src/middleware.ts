@@ -12,30 +12,33 @@ const APP_HOSTNAMES = new Set([
   "www.cianstudio.com.br",
 ]);
 
+function isAppHostname(hostname: string): boolean {
+  return APP_HOSTNAMES.has(hostname) || hostname.includes("vercel.app");
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hostname = request.headers.get("host") || "";
 
   // Custom domain routing: if hostname is NOT the main app, treat as wedding site
-  const isCustomDomain = !APP_HOSTNAMES.has(hostname) && !hostname.includes("vercel.app");
-
-  if (isCustomDomain) {
-    // For custom domains, resolve the slug via a lightweight API call
-    // and rewrite transparently to the slug-based wedding page
+  if (!isAppHostname(hostname) && pathname === "/") {
+    // For custom domains hitting the root, rewrite to the domain resolve API
+    // The client-side will handle the rendering
+    const url = request.nextUrl.clone();
+    url.pathname = `/api/public/domain/${hostname}/resolve`;
+    // We can't rewrite to a page here due to potential loops
+    // Instead, return a redirect to the resolved slug (handled client-side)
     try {
-      const resolveUrl = new URL(`/api/public/domain/${hostname}/resolve`, request.url);
-      const res = await fetch(resolveUrl);
+      const res = await fetch(url);
       if (res.ok) {
         const { slug } = await res.json();
         if (slug) {
-          const url = request.nextUrl.clone();
-          url.pathname = `/${slug}`;
-          return NextResponse.rewrite(url);
+          const rewriteUrl = request.nextUrl.clone();
+          rewriteUrl.pathname = `/${slug}`;
+          return NextResponse.rewrite(rewriteUrl);
         }
       }
-    } catch { /* fall through to 404 */ }
-    // If domain not found, continue to show the default 404
-    return NextResponse.next();
+    } catch { /* fall through */ }
   }
 
   const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
@@ -66,6 +69,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/",
     "/admin/:path*",
     "/login",
     "/api/clients/:path*",
@@ -74,7 +78,5 @@ export const config = {
     "/api/profile/:path*",
     "/api/websites/:path*",
     "/api/config/:path*",
-    // Match all paths for custom domain detection
-    "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 };
