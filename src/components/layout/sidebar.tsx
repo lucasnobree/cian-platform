@@ -18,7 +18,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const { data: session } = useSession();
-  const role = (session?.user as unknown as { role?: string })?.role;
+  const role = session?.user?.role;
 
   const allNavItems = [
     ...navItems,

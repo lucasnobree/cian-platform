@@ -35,6 +35,16 @@ export async function POST(
       return NextResponse.json({ message: "RSVP enviado com sucesso!" }, { status: 201 });
     }
 
+    // Anti-spam: reject excessively long names (silently succeed to avoid revealing detection)
+    if (rsvpData.guestName.length > 100) {
+      return NextResponse.json({ message: "RSVP enviado com sucesso!" }, { status: 201 });
+    }
+
+    // Anti-spam: reject messages containing URLs (silently succeed)
+    if (rsvpData.message && /https?:\/\/|www\./i.test(rsvpData.message)) {
+      return NextResponse.json({ message: "RSVP enviado com sucesso!" }, { status: 201 });
+    }
+
     // Verify slug exists and site is published
     const client = await prisma.client.findUnique({
       where: { websiteSlug: slug },

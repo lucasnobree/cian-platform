@@ -18,7 +18,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const role = (session.user as unknown as { role: string }).role;
+  const role = session.user.role;
   if (role !== "owner") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const role = (session.user as unknown as { role: string }).role;
+  const role = session.user.role;
   if (role !== "owner") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

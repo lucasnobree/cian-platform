@@ -83,7 +83,7 @@ export async function PUT(
       update: parsed.data,
     });
 
-    const userId = (session.user as unknown as { id: string }).id;
+    const userId = session.user.id;
     logAudit({
       action: "upsert",
       entity: "websiteConfig",

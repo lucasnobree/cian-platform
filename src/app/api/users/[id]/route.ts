@@ -22,7 +22,7 @@ export async function PUT(
   }
 
   const { id } = await params;
-  const sessionUser = session.user as unknown as { id: string; role: string };
+  const sessionUser = session.user;
 
   // Only owner can edit other users; any user can edit themselves
   if (sessionUser.role !== "owner" && sessionUser.id !== id) {
@@ -71,7 +71,7 @@ export async function DELETE(
   }
 
   const { id } = await params;
-  const sessionUser = session.user as unknown as { id: string; role: string };
+  const sessionUser = session.user;
 
   if (sessionUser.role !== "owner") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });

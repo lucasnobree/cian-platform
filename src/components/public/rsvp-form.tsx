@@ -12,7 +12,7 @@ export function RsvpForm({ slug }: RsvpFormProps) {
     guestName: "",
     guestEmail: "",
     guestPhone: "",
-    attendance: "yes",
+    attendance: "sim",
     companions: 0,
     dietaryNotes: "",
     message: "",
@@ -178,9 +178,9 @@ export function RsvpForm({ slug }: RsvpFormProps) {
         </label>
         <div className="flex gap-3">
           {[
-            { value: "yes", label: "Sim, estarei presente" },
-            { value: "no", label: "Infelizmente não poderei ir" },
-            { value: "maybe", label: "Ainda não sei" },
+            { value: "sim", label: "Sim, estarei presente" },
+            { value: "nao", label: "Infelizmente não poderei ir" },
+            { value: "talvez", label: "Ainda não sei" },
           ].map((opt) => (
             <label
               key={opt.value}
@@ -209,14 +209,14 @@ export function RsvpForm({ slug }: RsvpFormProps) {
                 onChange={(e) => update("attendance", e.target.value)}
                 className="sr-only"
               />
-              {opt.value === "yes" ? "Sim" : opt.value === "no" ? "Não" : "Talvez"}
+              {opt.value === "sim" ? "Sim" : opt.value === "nao" ? "Não" : "Talvez"}
             </label>
           ))}
         </div>
       </div>
 
       {/* Companions */}
-      {formData.attendance !== "no" && (
+      {formData.attendance !== "nao" && (
         <div>
           <label className="block text-sm mb-1.5 font-medium" style={labelStyle}>
             Acompanhantes

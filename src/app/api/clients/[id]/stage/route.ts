@@ -37,7 +37,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       data: { pipelineStage: parsed.data.stage },
     });
 
-    const userId = (session.user as unknown as { id: string }).id;
+    const userId = session.user.id;
     logAudit({
       action: "update",
       entity: "client",

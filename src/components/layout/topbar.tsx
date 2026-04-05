@@ -51,6 +51,7 @@ export function Topbar() {
           onClick={() => signOut({ callbackUrl: "/login" })}
           className="text-sand-400 hover:text-sand-600 transition-colors p-1.5 rounded-lg hover:bg-sand-100"
           title="Sair"
+          aria-label="Sair da conta"
         >
           <LogOut size={16} strokeWidth={1.5} />
         </button>

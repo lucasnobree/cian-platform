@@ -11,16 +11,20 @@ interface AuditParams {
 }
 
 export function logAudit(params: AuditParams) {
-  const data: Prisma.AuditLogUncheckedCreateInput = {
-    action: params.action,
-    entity: params.entity,
-    userId: params.userId ?? null,
-    entityId: params.entityId ?? null,
-    details: params.details ?? undefined,
-    ipAddress: params.ipAddress ?? null,
-  };
+  try {
+    const data: Prisma.AuditLogUncheckedCreateInput = {
+      action: params.action,
+      entity: params.entity,
+      userId: params.userId ?? null,
+      entityId: params.entityId ?? null,
+      details: params.details ?? undefined,
+      ipAddress: params.ipAddress ?? null,
+    };
 
-  prisma.auditLog.create({ data }).catch((err) => {
-    console.error("[AuditLog] Failed to log:", err);
-  });
+    prisma.auditLog.create({ data }).catch((err) => {
+      console.error("[AuditLog] Failed to log:", err);
+    });
+  } catch (err) {
+    console.error("[AuditLog] Unexpected error:", err);
+  }
 }

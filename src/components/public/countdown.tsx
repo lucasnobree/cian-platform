@@ -44,14 +44,32 @@ function TimeUnit({ value, label }: { value: number; label: string }) {
 
 export function Countdown({ weddingDate }: CountdownProps) {
   const target = new Date(weddingDate);
-  const [timeLeft, setTimeLeft] = useState(calcTimeLeft(target));
+  const isValidDate = !isNaN(target.getTime());
+  const [timeLeft, setTimeLeft] = useState(isValidDate ? calcTimeLeft(target) : null);
 
   useEffect(() => {
+    if (!isValidDate) return;
     const timer = setInterval(() => {
       setTimeLeft(calcTimeLeft(target));
     }, 1000);
     return () => clearInterval(timer);
   }, [weddingDate]);
+
+  if (!isValidDate || !timeLeft) {
+    return (
+      <div className="text-center py-8">
+        <p
+          className="text-lg opacity-60"
+          style={{
+            fontFamily: "var(--wedding-font-body)",
+            color: "var(--wedding-text)",
+          }}
+        >
+          Em breve mais informações sobre a data.
+        </p>
+      </div>
+    );
+  }
 
   if (timeLeft.expired) {
     return (

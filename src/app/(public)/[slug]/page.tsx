@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Countdown } from "@/components/public/countdown";
 import { RsvpForm } from "@/components/public/rsvp-form";
+import { safeFontFamily, safeCssColor } from "@/lib/validators/css-safe";
 import {
   MapPin,
   Clock,
@@ -83,13 +84,15 @@ function WeddingSection({
   children,
   id,
   className = "",
+  ariaLabel,
 }: {
   children: React.ReactNode;
   id: string;
   className?: string;
+  ariaLabel?: string;
 }) {
   return (
-    <section id={id} className={`px-6 py-16 sm:py-20 md:py-24 ${className}`}>
+    <section id={id} role="region" aria-label={ariaLabel || id} className={`px-6 py-16 sm:py-20 md:py-24 ${className}`}>
       <div className="max-w-3xl mx-auto">{children}</div>
     </section>
   );
@@ -148,8 +151,17 @@ export default async function WeddingPage({ params }: PageProps) {
   const tips: TipItem[] = Array.isArray(cfg.tips) ? (cfg.tips as unknown as TipItem[]) : [];
   const galleryImages: string[] = cfg.galleryImages || [];
 
+  // Sanitize user-provided CSS values
+  const safeHeading = safeFontFamily(cfg.fontHeading);
+  const safeBody = safeFontFamily(cfg.fontBody);
+  const safePrimary = safeCssColor(cfg.primaryColor);
+  const safeSecondary = safeCssColor(cfg.secondaryColor);
+  const safeAccent = safeCssColor(cfg.accentColor);
+  const safeBg = safeCssColor(cfg.backgroundColor, "#FFFFFF");
+  const safeText = safeCssColor(cfg.textColor);
+
   // Build Google Fonts URL
-  const fontsUrl = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(cfg.fontHeading)}&family=${encodeURIComponent(cfg.fontBody)}:wght@400;600&display=swap`;
+  const fontsUrl = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(safeHeading)}&family=${encodeURIComponent(safeBody)}:wght@400;600&display=swap`;
 
   return (
     <>
@@ -158,16 +170,16 @@ export default async function WeddingPage({ params }: PageProps) {
       <div
         style={
           {
-            "--wedding-primary": cfg.primaryColor,
-            "--wedding-secondary": cfg.secondaryColor,
-            "--wedding-accent": cfg.accentColor,
-            "--wedding-bg": cfg.backgroundColor,
-            "--wedding-text": cfg.textColor,
-            "--wedding-font-heading": `'${cfg.fontHeading}', cursive`,
-            "--wedding-font-body": `'${cfg.fontBody}', serif`,
-            backgroundColor: cfg.backgroundColor,
-            color: cfg.textColor,
-            fontFamily: `'${cfg.fontBody}', serif`,
+            "--wedding-primary": safePrimary,
+            "--wedding-secondary": safeSecondary,
+            "--wedding-accent": safeAccent,
+            "--wedding-bg": safeBg,
+            "--wedding-text": safeText,
+            "--wedding-font-heading": `'${safeHeading}', cursive`,
+            "--wedding-font-body": `'${safeBody}', serif`,
+            backgroundColor: safeBg,
+            color: safeText,
+            fontFamily: `'${safeBody}', serif`,
           } as React.CSSProperties
         }
         className="min-h-screen"
@@ -188,7 +200,7 @@ export default async function WeddingPage({ params }: PageProps) {
             <div
               className="absolute inset-0"
               style={{
-                background: `linear-gradient(135deg, ${cfg.primaryColor}22 0%, ${cfg.backgroundColor} 50%, ${cfg.accentColor}22 100%)`,
+                background: `linear-gradient(135deg, ${safePrimary}22 0%, ${safeBg} 50%, ${safeAccent}22 100%)`,
               }}
             />
           )}
@@ -199,8 +211,8 @@ export default async function WeddingPage({ params }: PageProps) {
               <p
                 className="text-sm sm:text-base tracking-[0.3em] uppercase mb-6 opacity-80"
                 style={{
-                  fontFamily: `'${cfg.fontBody}', serif`,
-                  color: cfg.heroImageUrl ? "#fff" : cfg.textColor,
+                  fontFamily: `'${safeBody}', serif`,
+                  color: cfg.heroImageUrl ? "#fff" : safeText,
                 }}
               >
                 {cfg.monogram}
@@ -210,8 +222,8 @@ export default async function WeddingPage({ params }: PageProps) {
             <h1
               className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl mb-6"
               style={{
-                fontFamily: `'${cfg.fontHeading}', cursive`,
-                color: cfg.heroImageUrl ? "#fff" : cfg.primaryColor,
+                fontFamily: `'${safeHeading}', cursive`,
+                color: cfg.heroImageUrl ? "#fff" : safePrimary,
                 lineHeight: 1.1,
               }}
             >
@@ -222,8 +234,8 @@ export default async function WeddingPage({ params }: PageProps) {
               <p
                 className="text-base sm:text-lg tracking-[0.15em] mb-3 opacity-90"
                 style={{
-                  fontFamily: `'${cfg.fontBody}', serif`,
-                  color: cfg.heroImageUrl ? "#fff" : cfg.textColor,
+                  fontFamily: `'${safeBody}', serif`,
+                  color: cfg.heroImageUrl ? "#fff" : safeText,
                 }}
               >
                 {cfg.heroDate ||
@@ -239,8 +251,8 @@ export default async function WeddingPage({ params }: PageProps) {
               <p
                 className="text-sm sm:text-base opacity-70 flex items-center justify-center gap-2"
                 style={{
-                  fontFamily: `'${cfg.fontBody}', serif`,
-                  color: cfg.heroImageUrl ? "#fff" : cfg.textColor,
+                  fontFamily: `'${safeBody}', serif`,
+                  color: cfg.heroImageUrl ? "#fff" : safeText,
                 }}
               >
                 <MapPin size={14} />
@@ -252,7 +264,7 @@ export default async function WeddingPage({ params }: PageProps) {
             <div className="mt-16 animate-bounce opacity-50">
               <ChevronDown
                 size={24}
-                style={{ color: cfg.heroImageUrl ? "#fff" : cfg.textColor }}
+                style={{ color: cfg.heroImageUrl ? "#fff" : safeText }}
               />
             </div>
           </div>
@@ -260,14 +272,14 @@ export default async function WeddingPage({ params }: PageProps) {
 
         {/* ═══════ COUNTDOWN ═══════ */}
         {cfg.showCountdown && (
-          <WeddingSection id="countdown">
+          <WeddingSection id="countdown" ariaLabel="Contagem regressiva">
             <Countdown weddingDate={client.weddingDate.toISOString()} />
           </WeddingSection>
         )}
 
         {/* ═══════ WELCOME ═══════ */}
         {cfg.showWelcome && (cfg.welcomeTitle || cfg.welcomeText) && (
-          <WeddingSection id="welcome">
+          <WeddingSection id="welcome" ariaLabel="Boas-vindas">
             <div className="text-center">
               <SectionTitle>{cfg.welcomeTitle || "Bem-vindos"}</SectionTitle>
               <Divider />
@@ -276,7 +288,7 @@ export default async function WeddingPage({ params }: PageProps) {
                 <div className="my-8 flex justify-center">
                   <div
                     className="w-48 h-48 sm:w-56 sm:h-56 rounded-full overflow-hidden border-4 shadow-lg"
-                    style={{ borderColor: cfg.accentColor }}
+                    style={{ borderColor: safeAccent }}
                   >
                     <img
                       src={cfg.couplePhotoUrl}
@@ -301,7 +313,7 @@ export default async function WeddingPage({ params }: PageProps) {
 
         {/* ═══════ EVENT ═══════ */}
         {cfg.showEvent && (cfg.eventTitle || cfg.eventVenue) && (
-          <WeddingSection id="event">
+          <WeddingSection id="event" ariaLabel="Evento">
             <div className="text-center">
               <SectionTitle>{cfg.eventTitle || "Cerimônia & Recepção"}</SectionTitle>
               <Divider />
@@ -345,7 +357,7 @@ export default async function WeddingPage({ params }: PageProps) {
 
         {/* ═══════ SCHEDULE ═══════ */}
         {cfg.showSchedule && schedule.length > 0 && (
-          <WeddingSection id="schedule">
+          <WeddingSection id="schedule" ariaLabel="Programação">
             <div className="text-center mb-10">
               <SectionTitle>Programação</SectionTitle>
               <Divider />
@@ -399,7 +411,7 @@ export default async function WeddingPage({ params }: PageProps) {
 
         {/* ═══════ DRESS CODE ═══════ */}
         {cfg.showDressCode && (cfg.dressCodeWomen || cfg.dressCodeMen) && (
-          <WeddingSection id="dresscode">
+          <WeddingSection id="dresscode" ariaLabel="Dress Code">
             <div className="text-center mb-10">
               <SectionTitle>Dress Code</SectionTitle>
               <Divider />
@@ -410,8 +422,8 @@ export default async function WeddingPage({ params }: PageProps) {
                 <div
                   className="rounded-xl p-6 text-center"
                   style={{
-                    backgroundColor: `${cfg.secondaryColor}80`,
-                    border: `1px solid ${cfg.accentColor}40`,
+                    backgroundColor: `${safeSecondary}80`,
+                    border: `1px solid ${safeAccent}40`,
                   }}
                 >
                   <Shirt
@@ -440,8 +452,8 @@ export default async function WeddingPage({ params }: PageProps) {
                 <div
                   className="rounded-xl p-6 text-center"
                   style={{
-                    backgroundColor: `${cfg.secondaryColor}80`,
-                    border: `1px solid ${cfg.accentColor}40`,
+                    backgroundColor: `${safeSecondary}80`,
+                    border: `1px solid ${safeAccent}40`,
                   }}
                 >
                   <Shirt
@@ -472,7 +484,7 @@ export default async function WeddingPage({ params }: PageProps) {
 
         {/* ═══════ GIFTS ═══════ */}
         {cfg.showGifts && (
-          <WeddingSection id="gifts">
+          <WeddingSection id="gifts" ariaLabel="Lista de presentes">
             <div className="text-center">
               <SectionTitle>Lista de Presentes</SectionTitle>
               <Divider />
@@ -500,7 +512,7 @@ export default async function WeddingPage({ params }: PageProps) {
 
         {/* ═══════ RSVP ═══════ */}
         {cfg.showRsvp && (
-          <WeddingSection id="rsvp">
+          <WeddingSection id="rsvp" ariaLabel="Confirme sua presença">
             <div className="text-center mb-10">
               <SectionTitle>Confirme sua Presença</SectionTitle>
               <Divider />
@@ -517,7 +529,7 @@ export default async function WeddingPage({ params }: PageProps) {
 
         {/* ═══════ TIPS ═══════ */}
         {cfg.showTips && tips.length > 0 && (
-          <WeddingSection id="tips">
+          <WeddingSection id="tips" ariaLabel="Dicas">
             <div className="text-center mb-10">
               <SectionTitle>Dicas</SectionTitle>
               <Divider />
@@ -529,8 +541,8 @@ export default async function WeddingPage({ params }: PageProps) {
                   key={i}
                   className="rounded-xl p-5"
                   style={{
-                    backgroundColor: `${cfg.secondaryColor}60`,
-                    border: `1px solid ${cfg.accentColor}30`,
+                    backgroundColor: `${safeSecondary}60`,
+                    border: `1px solid ${safeAccent}30`,
                   }}
                 >
                   <div className="flex items-start gap-3">
@@ -562,7 +574,7 @@ export default async function WeddingPage({ params }: PageProps) {
 
         {/* ═══════ GALLERY ═══════ */}
         {cfg.showGallery && galleryImages.length > 0 && (
-          <WeddingSection id="gallery">
+          <WeddingSection id="gallery" ariaLabel="Galeria de fotos">
             <div className="text-center mb-10">
               <SectionTitle>Galeria</SectionTitle>
               <Divider />
@@ -573,7 +585,7 @@ export default async function WeddingPage({ params }: PageProps) {
                 <div
                   key={i}
                   className="aspect-square rounded-lg overflow-hidden"
-                  style={{ border: `1px solid ${cfg.accentColor}20` }}
+                  style={{ border: `1px solid ${safeAccent}20` }}
                 >
                   <img
                     src={url}

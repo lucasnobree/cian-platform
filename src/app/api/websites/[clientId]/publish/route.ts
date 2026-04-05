@@ -70,7 +70,7 @@ export async function PUT(
       },
     });
 
-    const userId = (session.user as unknown as { id: string }).id;
+    const userId = session.user.id;
     logAudit({
       action,
       entity: "website",

@@ -46,7 +46,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if (parsed.data.weddingDate) data.weddingDate = new Date(parsed.data.weddingDate);
 
     const client = await prisma.client.update({ where: { id }, data });
-    const userId = (session.user as unknown as { id: string }).id;
+    const userId = session.user.id;
     logAudit({ action: "update", entity: "client", entityId: id, userId });
     return NextResponse.json(client);
   } catch (error) {
@@ -64,7 +64,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
     const { id } = await params;
     await prisma.client.delete({ where: { id } });
-    const userId = (session.user as unknown as { id: string }).id;
+    const userId = session.user.id;
     logAudit({ action: "delete", entity: "client", entityId: id, userId });
     return NextResponse.json({ ok: true });
   } catch (error) {

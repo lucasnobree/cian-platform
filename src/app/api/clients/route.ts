@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const userId = (session.user as unknown as { id: string }).id;
+    const userId = session.user.id;
     logAudit({ action: "create", entity: "client", entityId: client.id, userId });
 
     return NextResponse.json(client, { status: 201 });

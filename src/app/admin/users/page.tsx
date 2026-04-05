@@ -20,7 +20,7 @@ interface UserItem {
 export default function UsersPage() {
   const { data: session } = useSession();
   const router = useRouter();
-  const role = (session?.user as unknown as { role?: string })?.role;
+  const role = session?.user?.role;
 
   const [users, setUsers] = useState<UserItem[]>([]);
   const [showForm, setShowForm] = useState(false);
