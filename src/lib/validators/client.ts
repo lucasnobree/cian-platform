@@ -72,7 +72,7 @@ export const clientCreateSchema = z.object({
   leadSource: z.enum(VALID_LEAD_SOURCES).optional(),
   referredBy: z.string().max(100).optional(),
   tags: z.array(z.string().max(30)).max(10).optional(),
-  websiteSlug: z.string().min(3).max(50)
+  websiteSlug: z.string().min(2).max(50)
     .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Slug deve conter apenas letras minúsculas, números e hífens")
     .refine((val) => !RESERVED_SLUGS.includes(val), "Slug reservado pelo sistema")
     .optional(),

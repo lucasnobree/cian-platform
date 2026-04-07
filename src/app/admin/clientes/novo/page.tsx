@@ -246,6 +246,17 @@ export default function NovoClientePage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
+        if (data?.issues) {
+          const fieldErrors: Record<string, string> = {};
+          for (const issue of data.issues) {
+            const field = issue.path?.[0];
+            if (field) fieldErrors[String(field)] = issue.message;
+          }
+          if (Object.keys(fieldErrors).length > 0) {
+            setErrors(fieldErrors);
+            throw new Error("Verifique os campos destacados");
+          }
+        }
         throw new Error(data?.error || "Erro ao criar cliente");
       }
 
