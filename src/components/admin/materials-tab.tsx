@@ -101,18 +101,34 @@ export function MaterialsTab({
     setError("");
 
     for (const file of Array.from(files)) {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("type", uploadCategory);
-
       try {
+        // 1. Get signed upload URL from API
         const res = await fetch(`/api/clients/${clientId}/documents`, {
           method: "POST",
-          body: formData,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileName: file.name,
+            fileSize: file.size,
+            fileType: file.type,
+            category: uploadCategory,
+          }),
         });
         if (!res.ok) {
           const data = await res.json().catch(() => null);
-          throw new Error(data?.error || "Erro ao enviar arquivo");
+          throw new Error(data?.error || "Erro ao preparar upload");
+        }
+
+        const { uploadUrl, uploadHeaders } = await res.json();
+
+        // 2. Upload directly to Supabase Storage (bypasses Vercel 4.5MB limit)
+        const uploadRes = await fetch(uploadUrl, {
+          method: "PUT",
+          headers: uploadHeaders,
+          body: file,
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error("Erro ao enviar arquivo para o storage");
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Erro ao enviar arquivo");
@@ -225,7 +241,7 @@ export function MaterialsTab({
               </button>
             </p>
             <p className="text-xs text-sand-400 mt-0.5">
-              JPG, PNG, WebP, GIF, SVG ou PDF — máx. 10MB
+              JPG, PNG, WebP, GIF, SVG ou PDF — máx. 50MB
             </p>
           </div>
           <div className="shrink-0">

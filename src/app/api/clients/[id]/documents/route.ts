@@ -3,6 +3,20 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+const ALLOWED_TYPES = [
+  "image/jpeg", "image/png", "image/webp", "image/gif",
+  "image/svg+xml", "application/pdf",
+];
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+
+function getSupabaseConfig() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  return { url, key };
+}
+
+// GET: List documents for a client
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -26,6 +40,8 @@ export async function GET(
   }
 }
 
+// POST: Generate signed upload URL + save document record
+// The frontend uploads directly to Supabase using this URL
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -36,84 +52,88 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const config = getSupabaseConfig();
+    if (!config) {
+      return NextResponse.json({ error: "Storage não configurado" }, { status: 500 });
+    }
+
     const { id } = await params;
 
-    // Verify client exists
     const client = await prisma.client.findUnique({ where: { id }, select: { id: true } });
     if (!client) {
       return NextResponse.json({ error: "Client not found" }, { status: 404 });
     }
 
-    const formData = await req.formData();
-    const file = formData.get("file") as File | null;
-    const type = (formData.get("type") as string) || "material";
+    const body = await req.json();
+    const { fileName, fileSize, fileType, category } = body;
 
-    if (!file) {
-      return NextResponse.json({ error: "Arquivo não enviado" }, { status: 400 });
+    if (!fileName || !fileSize || !fileType) {
+      return NextResponse.json({ error: "fileName, fileSize e fileType são obrigatórios" }, { status: 400 });
     }
 
-    // Validate file size (10MB max)
-    if (file.size > 10 * 1024 * 1024) {
-      return NextResponse.json({ error: "Arquivo excede 10MB" }, { status: 400 });
+    if (fileSize > MAX_FILE_SIZE) {
+      return NextResponse.json({ error: "Arquivo excede 50MB" }, { status: 400 });
     }
 
-    // Validate file type
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"];
-    if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json({ error: "Tipo de arquivo não permitido. Use JPG, PNG, WebP, GIF ou PDF." }, { status: 400 });
+    if (!ALLOWED_TYPES.includes(fileType)) {
+      return NextResponse.json({
+        error: "Tipo não permitido. Use JPG, PNG, WebP, GIF, SVG ou PDF.",
+      }, { status: 400 });
     }
 
-    // Upload to Supabase Storage
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
-      return NextResponse.json({ error: "Storage não configurado" }, { status: 500 });
-    }
-
-    const ext = file.name.split(".").pop() || "bin";
+    // Generate unique storage path
+    const ext = fileName.split(".").pop() || "bin";
     const storagePath = `clients/${id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
-    const arrayBuffer = await file.arrayBuffer();
-    const uploadRes = await fetch(
-      `${supabaseUrl}/storage/v1/object/materials/${storagePath}`,
+    // Create signed upload URL (valid for 2 minutes)
+    const signRes = await fetch(
+      `${config.url}/storage/v1/object/upload/sign/materials/${storagePath}`,
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${supabaseKey}`,
-          "Content-Type": file.type,
+          Authorization: `Bearer ${config.key}`,
+          "Content-Type": "application/json",
         },
-        body: arrayBuffer,
+        body: JSON.stringify({ expiresIn: 120 }),
       }
     );
 
-    if (!uploadRes.ok) {
-      const errText = await uploadRes.text();
-      console.error("[Upload error]", errText);
-      return NextResponse.json({ error: "Erro ao fazer upload" }, { status: 500 });
+    if (!signRes.ok) {
+      const errText = await signRes.text();
+      console.error("[Sign URL error]", errText);
+      return NextResponse.json({ error: "Erro ao gerar URL de upload" }, { status: 500 });
     }
 
-    const publicUrl = `${supabaseUrl}/storage/v1/object/public/materials/${storagePath}`;
+    const signData = await signRes.json();
+    const uploadUrl = `${config.url}/storage/v1${signData.url}`;
+    const publicUrl = `${config.url}/storage/v1/object/public/materials/${storagePath}`;
 
-    // Save document record
+    // Save document record in database
     const document = await prisma.document.create({
       data: {
         clientId: id,
-        name: file.name,
-        type,
+        name: fileName,
+        type: category || "outros",
         url: publicUrl,
-        size: file.size,
-        mimeType: file.type,
+        size: fileSize,
+        mimeType: fileType,
       },
     });
 
-    return NextResponse.json(document, { status: 201 });
+    return NextResponse.json({
+      document,
+      uploadUrl,
+      uploadHeaders: {
+        "Content-Type": fileType,
+      },
+    }, { status: 201 });
   } catch (error) {
     console.error("[POST /api/clients/[id]/documents]", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
+// DELETE: Remove document and file from storage
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -140,17 +160,15 @@ export async function DELETE(
     }
 
     // Delete from Supabase Storage
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (supabaseUrl && supabaseKey && doc.url.includes("/storage/")) {
+    const config = getSupabaseConfig();
+    if (config && doc.url.includes("/storage/")) {
       const storagePath = doc.url.split("/materials/")[1];
       if (storagePath) {
         await fetch(
-          `${supabaseUrl}/storage/v1/object/materials/${storagePath}`,
+          `${config.url}/storage/v1/object/materials/${storagePath}`,
           {
             method: "DELETE",
-            headers: { Authorization: `Bearer ${supabaseKey}` },
+            headers: { Authorization: `Bearer ${config.key}` },
           }
         );
       }
