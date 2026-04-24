@@ -17,8 +17,8 @@ const cspDirectives = [
   "img-src 'self' data: blob: https://*.supabase.co https://utfs.io https://uploadthing.com https://*.uploadthing.com",
   // Allow API calls to self and Supabase
   "connect-src 'self' https://*.supabase.co",
-  // Block iframes except same origin
-  "frame-src 'self'",
+  // Allow iframes from same origin and Supabase (used to render custom sites)
+  "frame-src 'self' https://*.supabase.co",
   // Block object/embed/applet
   "object-src 'none'",
   // Restrict base URI to prevent base tag hijacking
