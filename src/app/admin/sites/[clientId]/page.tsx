@@ -373,24 +373,50 @@ export default function SiteEditorPage() {
     }
   }
 
-  // Upload custom site ZIP
+  // Upload custom site ZIP (direct to Supabase Storage to bypass Vercel 4.5MB body limit)
   async function handleZipUpload(file: File) {
     if (!file) return;
     setUploadingZip(true);
     setUploadError("");
 
-    const formData = new FormData();
-    formData.append("file", file);
-
     try {
+      const signRes = await fetch(`/api/websites/${clientId}/upload-url`, {
+        method: "POST",
+      });
+      const signData = await signRes.json().catch(() => ({}));
+      if (!signRes.ok) {
+        throw new Error(signData.error || "Não foi possível gerar URL de upload");
+      }
+      const { uploadUrl, uploadPath, maxFileSize } = signData as {
+        uploadUrl: string;
+        uploadPath: string;
+        maxFileSize: number;
+      };
+
+      if (typeof maxFileSize === "number" && file.size > maxFileSize) {
+        throw new Error(
+          `Arquivo excede o limite de ${Math.floor(maxFileSize / (1024 * 1024))}MB`
+        );
+      }
+
+      const putRes = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": "application/zip" },
+        body: file,
+      });
+      if (!putRes.ok) {
+        throw new Error("Falha ao enviar o arquivo para o storage");
+      }
+
       const res = await fetch(`/api/websites/${clientId}/upload`, {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uploadPath }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        throw new Error(data.error || "Erro ao enviar arquivo");
+        throw new Error(data.error || "Erro ao processar arquivo");
       }
 
       setClient((prev) => (prev ? { ...prev, websiteType: "custom" } : prev));

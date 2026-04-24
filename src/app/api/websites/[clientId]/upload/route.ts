@@ -8,6 +8,8 @@ import JSZip from "jszip";
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 const BUCKET_NAME = "custom-sites";
 
+export const maxDuration = 60;
+
 function getSupabaseConfig() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -36,11 +38,34 @@ async function supabaseUpload(
   return res.ok;
 }
 
+async function supabaseDownload(
+  config: { url: string; key: string },
+  path: string
+): Promise<ArrayBuffer | null> {
+  const res = await fetch(
+    `${config.url}/storage/v1/object/${BUCKET_NAME}/${path}`,
+    {
+      headers: { Authorization: `Bearer ${config.key}` },
+    }
+  );
+  if (!res.ok) return null;
+  return await res.arrayBuffer();
+}
+
+async function supabaseDeleteObject(
+  config: { url: string; key: string },
+  path: string
+) {
+  await fetch(`${config.url}/storage/v1/object/${BUCKET_NAME}/${path}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${config.key}` },
+  });
+}
+
 async function supabaseDeleteFolder(
   config: { url: string; key: string },
   prefix: string
 ) {
-  // List files in the folder
   const listRes = await fetch(
     `${config.url}/storage/v1/object/list/${BUCKET_NAME}`,
     {
@@ -134,42 +159,62 @@ export async function POST(
       );
     }
 
-    const formData = await req.formData();
-    const file = formData.get("file") as File | null;
+    const slug = client.websiteSlug;
 
-    if (!file) {
-      return NextResponse.json({ error: "Nenhum arquivo enviado" }, { status: 400 });
+    const body = (await req.json()) as { uploadPath?: string };
+    const uploadPath = body.uploadPath;
+
+    if (!uploadPath || typeof uploadPath !== "string") {
+      return NextResponse.json(
+        { error: "uploadPath é obrigatório" },
+        { status: 400 }
+      );
     }
 
-    if (
-      !file.name.endsWith(".zip") &&
-      file.type !== "application/zip" &&
-      file.type !== "application/x-zip-compressed"
-    ) {
-      return NextResponse.json({ error: "Apenas arquivos .zip são aceitos" }, { status: 400 });
+    if (!uploadPath.startsWith(`_uploads/${slug}/`) || !uploadPath.endsWith(".zip")) {
+      return NextResponse.json(
+        { error: "uploadPath inválido" },
+        { status: 400 }
+      );
     }
 
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ error: "Arquivo excede o limite de 50MB" }, { status: 400 });
+    const arrayBuffer = await supabaseDownload(config, uploadPath);
+    if (!arrayBuffer) {
+      return NextResponse.json(
+        { error: "Arquivo enviado não encontrado no storage" },
+        { status: 400 }
+      );
     }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const zip = await JSZip.loadAsync(arrayBuffer);
+    if (arrayBuffer.byteLength > MAX_FILE_SIZE) {
+      await supabaseDeleteObject(config, uploadPath);
+      return NextResponse.json(
+        { error: "Arquivo excede o limite de 50MB" },
+        { status: 400 }
+      );
+    }
 
-    // Must contain index.html at root
+    let zip: JSZip;
+    try {
+      zip = await JSZip.loadAsync(arrayBuffer);
+    } catch {
+      await supabaseDeleteObject(config, uploadPath);
+      return NextResponse.json(
+        { error: "Arquivo .zip inválido ou corrompido" },
+        { status: 400 }
+      );
+    }
+
     if (!zip.file("index.html")) {
+      await supabaseDeleteObject(config, uploadPath);
       return NextResponse.json(
         { error: "O arquivo ZIP deve conter um index.html na raiz" },
         { status: 400 }
       );
     }
 
-    const slug = client.websiteSlug;
-
-    // Delete existing files (clean deploy)
     await supabaseDeleteFolder(config, slug);
 
-    // Upload each file
     const uploadedFiles: string[] = [];
     const uploadErrors: string[] = [];
 
@@ -191,6 +236,8 @@ export async function POST(
         uploadErrors.push(relativePath);
       }
     }
+
+    await supabaseDeleteObject(config, uploadPath);
 
     if (uploadedFiles.length === 0) {
       return NextResponse.json(
