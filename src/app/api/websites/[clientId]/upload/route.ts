@@ -205,12 +205,23 @@ export async function POST(
       );
     }
 
-    if (!zip.file("index.html")) {
-      await supabaseDeleteObject(config, uploadPath);
-      return NextResponse.json(
-        { error: "O arquivo ZIP deve conter um index.html na raiz" },
-        { status: 400 }
-      );
+    const allEntries = Object.entries(zip.files).filter(([, entry]) => !entry.dir);
+
+    // Detect a single common root folder and strip it. Handles the common
+    // case where users zip a folder ("Site/index.html") instead of its contents.
+    let stripPrefix = "";
+    if (!zip.file("index.html") && allEntries.length > 0) {
+      const firstSegments = allEntries.map(([path]) => path.split("/")[0]);
+      const allSame = firstSegments.every((s) => s === firstSegments[0] && s !== "");
+      if (allSame && zip.file(`${firstSegments[0]}/index.html`)) {
+        stripPrefix = `${firstSegments[0]}/`;
+      } else {
+        await supabaseDeleteObject(config, uploadPath);
+        return NextResponse.json(
+          { error: "O arquivo ZIP deve conter um index.html na raiz" },
+          { status: 400 }
+        );
+      }
     }
 
     await supabaseDeleteFolder(config, slug);
@@ -218,9 +229,15 @@ export async function POST(
     const uploadedFiles: string[] = [];
     const uploadErrors: string[] = [];
 
-    const fileEntries = Object.entries(zip.files).filter(([, entry]) => !entry.dir);
+    const fileEntries = stripPrefix
+      ? allEntries.filter(([path]) => path.startsWith(stripPrefix))
+      : allEntries;
 
-    for (const [relativePath, zipEntry] of fileEntries) {
+    for (const [originalPath, zipEntry] of fileEntries) {
+      const relativePath = stripPrefix
+        ? originalPath.slice(stripPrefix.length)
+        : originalPath;
+      if (!relativePath) continue;
       try {
         const content = await zipEntry.async("uint8array");
         const storagePath = `${slug}/${relativePath}`;
