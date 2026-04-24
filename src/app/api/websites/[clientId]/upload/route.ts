@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/services/audit";
+import { getSupabaseAdmin, getSupabaseUrl } from "@/lib/supabase-storage";
 import JSZip from "jszip";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
@@ -10,104 +11,15 @@ const BUCKET_NAME = "custom-sites";
 
 export const maxDuration = 60;
 
-function getSupabaseConfig() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) return null;
-  return { url, key };
-}
-
-async function supabaseUpload(
-  config: { url: string; key: string },
-  path: string,
-  content: Uint8Array,
-  contentType: string
-) {
-  const res = await fetch(
-    `${config.url}/storage/v1/object/${BUCKET_NAME}/${path}`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${config.key}`,
-        "Content-Type": contentType,
-        "x-upsert": "true",
-      },
-      body: Buffer.from(content),
-    }
-  );
-  return res.ok;
-}
-
-async function supabaseDownload(
-  config: { url: string; key: string },
-  path: string
-): Promise<ArrayBuffer | null> {
-  const res = await fetch(
-    `${config.url}/storage/v1/object/${BUCKET_NAME}/${path}`,
-    {
-      headers: { Authorization: `Bearer ${config.key}` },
-    }
-  );
-  if (!res.ok) return null;
-  return await res.arrayBuffer();
-}
-
-async function supabaseDeleteObject(
-  config: { url: string; key: string },
-  path: string
-) {
-  await fetch(`${config.url}/storage/v1/object/${BUCKET_NAME}/${path}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${config.key}` },
-  });
-}
-
-async function supabaseDeleteFolder(
-  config: { url: string; key: string },
-  prefix: string
-) {
-  const listRes = await fetch(
-    `${config.url}/storage/v1/object/list/${BUCKET_NAME}`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${config.key}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ prefix, limit: 1000 }),
-    }
-  );
-
-  if (!listRes.ok) return;
-
-  const items = await listRes.json();
-  if (!Array.isArray(items) || items.length === 0) return;
-
-  const filePaths = items
-    .filter((item: { name: string; id?: string }) => item.id)
-    .map((item: { name: string }) => `${prefix}/${item.name}`);
-
-  if (filePaths.length > 0) {
-    await fetch(`${config.url}/storage/v1/object/${BUCKET_NAME}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${config.key}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ prefixes: filePaths }),
-    });
-  }
-}
-
 function getContentType(filename: string): string {
   const ext = filename.split(".").pop()?.toLowerCase();
   const types: Record<string, string> = {
-    html: "text/html",
-    htm: "text/html",
-    css: "text/css",
-    js: "application/javascript",
-    mjs: "application/javascript",
-    json: "application/json",
+    html: "text/html; charset=utf-8",
+    htm: "text/html; charset=utf-8",
+    css: "text/css; charset=utf-8",
+    js: "application/javascript; charset=utf-8",
+    mjs: "application/javascript; charset=utf-8",
+    json: "application/json; charset=utf-8",
     png: "image/png",
     jpg: "image/jpeg",
     jpeg: "image/jpeg",
@@ -120,8 +32,9 @@ function getContentType(filename: string): string {
     ttf: "font/ttf",
     otf: "font/otf",
     mp4: "video/mp4",
+    webm: "video/webm",
     pdf: "application/pdf",
-    txt: "text/plain",
+    txt: "text/plain; charset=utf-8",
   };
   return types[ext || ""] || "application/octet-stream";
 }
@@ -136,8 +49,9 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const config = getSupabaseConfig();
-    if (!config) {
+    const supabase = getSupabaseAdmin();
+    const supabaseUrl = getSupabaseUrl();
+    if (!supabase || !supabaseUrl) {
       return NextResponse.json({ error: "Storage não configurado" }, { status: 500 });
     }
 
@@ -160,6 +74,7 @@ export async function POST(
     }
 
     const slug = client.websiteSlug;
+    const bucket = supabase.storage.from(BUCKET_NAME);
 
     const body = (await req.json()) as { uploadPath?: string };
     const uploadPath = body.uploadPath;
@@ -178,16 +93,17 @@ export async function POST(
       );
     }
 
-    const arrayBuffer = await supabaseDownload(config, uploadPath);
-    if (!arrayBuffer) {
+    const downloadRes = await bucket.download(uploadPath);
+    if (downloadRes.error || !downloadRes.data) {
       return NextResponse.json(
         { error: "Arquivo enviado não encontrado no storage" },
         { status: 400 }
       );
     }
+    const arrayBuffer = await downloadRes.data.arrayBuffer();
 
     if (arrayBuffer.byteLength > MAX_FILE_SIZE) {
-      await supabaseDeleteObject(config, uploadPath);
+      await bucket.remove([uploadPath]);
       return NextResponse.json(
         { error: "Arquivo excede o limite de 50MB" },
         { status: 400 }
@@ -198,7 +114,7 @@ export async function POST(
     try {
       zip = await JSZip.loadAsync(arrayBuffer);
     } catch {
-      await supabaseDeleteObject(config, uploadPath);
+      await bucket.remove([uploadPath]);
       return NextResponse.json(
         { error: "Arquivo .zip inválido ou corrompido" },
         { status: 400 }
@@ -216,7 +132,7 @@ export async function POST(
       if (allSame && zip.file(`${firstSegments[0]}/index.html`)) {
         stripPrefix = `${firstSegments[0]}/`;
       } else {
-        await supabaseDeleteObject(config, uploadPath);
+        await bucket.remove([uploadPath]);
         return NextResponse.json(
           { error: "O arquivo ZIP deve conter um index.html na raiz" },
           { status: 400 }
@@ -224,7 +140,16 @@ export async function POST(
       }
     }
 
-    await supabaseDeleteFolder(config, slug);
+    // Wipe previous deploy
+    const prevList = await bucket.list(slug, { limit: 1000 });
+    if (prevList.data && prevList.data.length > 0) {
+      const toRemove = prevList.data
+        .filter((item) => item.id)
+        .map((item) => `${slug}/${item.name}`);
+      if (toRemove.length > 0) {
+        await bucket.remove(toRemove);
+      }
+    }
 
     const uploadedFiles: string[] = [];
     const uploadErrors: string[] = [];
@@ -243,18 +168,26 @@ export async function POST(
         const storagePath = `${slug}/${relativePath}`;
         const contentType = getContentType(relativePath);
 
-        const ok = await supabaseUpload(config, storagePath, content, contentType);
-        if (ok) {
-          uploadedFiles.push(relativePath);
-        } else {
+        const blob = new Blob([content as BlobPart], { type: contentType });
+        const upRes = await bucket.upload(storagePath, blob, {
+          contentType,
+          upsert: true,
+          cacheControl: "3600",
+        });
+
+        if (upRes.error) {
+          console.error(`[upload] ${storagePath}:`, upRes.error.message);
           uploadErrors.push(relativePath);
+        } else {
+          uploadedFiles.push(relativePath);
         }
-      } catch {
+      } catch (err) {
+        console.error(`[upload] exception for ${relativePath}:`, err);
         uploadErrors.push(relativePath);
       }
     }
 
-    await supabaseDeleteObject(config, uploadPath);
+    await bucket.remove([uploadPath]);
 
     if (uploadedFiles.length === 0) {
       return NextResponse.json(
@@ -276,7 +209,7 @@ export async function POST(
       details: { slug, filesCount: uploadedFiles.length },
     });
 
-    const baseUrl = `${config.url}/storage/v1/object/public/${BUCKET_NAME}/${slug}/index.html`;
+    const baseUrl = `${supabaseUrl}/storage/v1/object/public/${BUCKET_NAME}/${slug}/index.html`;
 
     return NextResponse.json({
       success: true,
@@ -300,8 +233,8 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const config = getSupabaseConfig();
-    if (!config) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
       return NextResponse.json({ error: "Storage não configurado" }, { status: 500 });
     }
 
@@ -316,7 +249,18 @@ export async function DELETE(
       return NextResponse.json({ error: "Cliente não encontrado ou sem slug" }, { status: 404 });
     }
 
-    await supabaseDeleteFolder(config, client.websiteSlug);
+    const slug = client.websiteSlug;
+    const bucket = supabase.storage.from(BUCKET_NAME);
+
+    const list = await bucket.list(slug, { limit: 1000 });
+    if (list.data && list.data.length > 0) {
+      const toRemove = list.data
+        .filter((item) => item.id)
+        .map((item) => `${slug}/${item.name}`);
+      if (toRemove.length > 0) {
+        await bucket.remove(toRemove);
+      }
+    }
 
     await prisma.client.update({
       where: { id: clientId },
@@ -328,7 +272,7 @@ export async function DELETE(
       entity: "website",
       entityId: clientId,
       userId: session.user.id,
-      details: { slug: client.websiteSlug },
+      details: { slug },
     });
 
     return NextResponse.json({ success: true });
